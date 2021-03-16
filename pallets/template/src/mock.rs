@@ -7,7 +7,7 @@ use sp_runtime::{
 use frame_system as system;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlock<Test>; 
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
