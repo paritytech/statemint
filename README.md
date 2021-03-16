@@ -23,3 +23,9 @@ the Relay Chain's governance origins as its own.
 ## License
 
 Statemint is licensed under [GPL 3.0](LICENSE)
+
+
+### Temp 
+
+* Pointed the repo towards master to get the latest version of assets and make it easy to track as the pallet changes 
+* latest working commit https://github.com/paritytech/substrate/commit/24df4c50cb971fdfc9188d0009ef9a49eea2ce88
