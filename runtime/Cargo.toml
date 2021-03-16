@@ -45,6 +45,10 @@ optional = true
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 
+[dependencies.node-primitives]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+
 [dependencies.hex-literal]
 optional = true
 version = '0.3.1'
@@ -129,6 +133,10 @@ git = 'https://github.com/paritytech/substrate.git'
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 
+[dependencies.pallet-assets]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+
 [dependencies.template]
 default-features = false
 package = 'pallet-template'
@@ -151,6 +159,8 @@ std = [
     'codec/std',
     'frame-executive/std',
     'frame-support/std',
+    'node-primitives/std',
+    'pallet-assets/std',
     'pallet-aura/std',
     'pallet-balances/std',
     'pallet-grandpa/std',
