@@ -73,6 +73,10 @@ git = 'https://github.com/paritytech/substrate.git'
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 
+[dependencies.pallet-proxy]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+
 [dependencies.pallet-randomness-collective-flip]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -174,6 +178,7 @@ std = [
     'pallet-balances/std',
     'pallet-grandpa/std',
     'pallet-multisig/std',
+    'pallet-proxy/std',
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
     'pallet-timestamp/std',

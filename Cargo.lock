@@ -3564,6 +3564,7 @@ dependencies = [
  "pallet-balances",
  "pallet-grandpa",
  "pallet-multisig",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-template",
@@ -3809,6 +3810,21 @@ dependencies = [
 
 [[package]]
 name = "pallet-multisig"
+version = "3.0.0"
+source = "git+https://github.com/paritytech/substrate.git#cb033a47d2ae6322e318b44d65777f1bfc50a75c"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-proxy"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate.git#cb033a47d2ae6322e318b44d65777f1bfc50a75c"
 dependencies = [
