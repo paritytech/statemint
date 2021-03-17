@@ -53,6 +53,10 @@ git = 'https://github.com/paritytech/substrate.git'
 optional = true
 version = '0.3.1'
 
+[dependencies.pallet-assets]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+
 [dependencies.pallet-aura]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -62,6 +66,10 @@ default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 
 [dependencies.pallet-grandpa]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+
+[dependencies.pallet-multisig]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 
@@ -82,6 +90,10 @@ default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 
 [dependencies.pallet-transaction-payment-rpc-runtime-api]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+
+[dependencies.pallet-utility]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 
@@ -133,9 +145,6 @@ git = 'https://github.com/paritytech/substrate.git'
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 
-[dependencies.pallet-assets]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
 
 [dependencies.template]
 default-features = false
@@ -164,11 +173,13 @@ std = [
     'pallet-aura/std',
     'pallet-balances/std',
     'pallet-grandpa/std',
+    'pallet-multisig/std',
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
     'pallet-timestamp/std',
     'pallet-transaction-payment/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
+    'pallet-utility/std',
     'serde',
     'sp-api/std',
     'sp-block-builder/std',
