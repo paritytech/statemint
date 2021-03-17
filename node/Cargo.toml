@@ -1,9 +1,9 @@
 [[bin]]
-name = 'node-template'
+name = 'statemint'
 
 [features]
 default = []
-runtime-benchmarks = ['node-template-runtime/runtime-benchmarks']
+runtime-benchmarks = ['statemint-runtime/runtime-benchmarks']
 
 [package]
 authors = ['Anonymous']
@@ -12,7 +12,7 @@ description = 'A new FRAME-based Substrate node, ready for hacking.'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Unlicense'
-name = 'node-template'
+name = 'statemint'
 repository = 'https://github.com/paritytech/substrate/'
 version = '2.0.0'
 [package.metadata.docs.rs]
@@ -30,7 +30,7 @@ git = 'https://github.com/paritytech/substrate.git'
 [dependencies.frame-benchmarking-cli]
 git = 'https://github.com/paritytech/substrate.git'
 
-[dependencies.node-template-runtime]
+[dependencies.statemint-runtime]
 path = '../runtime'
 version = '2.0.0'
 

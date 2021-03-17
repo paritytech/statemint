@@ -8,7 +8,7 @@ authors = ['Anonymous']
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Unlicense'
-name = 'node-template-runtime'
+name = 'statemint-runtime'
 repository = 'https://github.com/paritytech/substrate/'
 version = '2.0.0'
 [package.metadata.docs.rs]
