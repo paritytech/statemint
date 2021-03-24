@@ -22,8 +22,7 @@ the Relay Chain's governance origins as its own.
 
 ## License
 
-Statemint is licensed under [GPL 3.0](LICENSE)
-
+Statemint is licensed under [Apache 2](LICENSE).
 
 ### Temp 
 
