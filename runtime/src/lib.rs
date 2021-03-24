@@ -320,13 +320,21 @@ parameter_types! {
 /// The type used to represent the kinds of proxying allowed.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug)]
 pub enum ProxyType {
+	/// Fully permissioned proxy. Can execute any call on behalf of _proxied_.
 	Any,
+	/// Can execute any call that does not transfer funds, including asset transfers.
 	NonTransfer,
+	/// Proxy with the ability to reject time-delay proxy announcements.
 	CancelProxy,
+	/// Assets proxy. Can execute any call from `assets`, **including asset transfers**.
 	Assets,
+	/// Owner proxy. Can execute calls related to asset ownership.
 	AssetOwner,
+	/// Asset manager. Can execute calls related to asset management.
 	AssetManager,
-	// Staking, // TODO: Add when complete: https://github.com/paritytech/statemint/issues/9
+	// Staking proxy. Can execute calls related to collator staking.
+	// TODO: Add when complete: https://github.com/paritytech/statemint/issues/9
+	// Staking,
 }
 impl Default for ProxyType { fn default() -> Self { Self::Any } }
 impl InstanceFilter<Call> for ProxyType {
