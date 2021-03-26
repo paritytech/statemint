@@ -1,0 +1,45 @@
+{
+	"relaychain": {
+		"bin": "./bin/polkadot",
+		"chain": "./rococo-local.json",
+		"nodes": [
+			{
+				"name": "alice",
+				"wsPort": 9944,
+				"port": 30444
+			},
+			{
+				"name": "charlie",
+				"wsPort": 9966,
+				"port": 30666
+			},
+			{
+				"name": "dave",
+				"wsPort": 9977,
+				"port": 30777
+			}
+		]
+	},
+	"parachains": [
+		{
+			"bin": "./target/release/statemint",
+			"id": "200",
+			"wsPort": 9988,
+			"port": 31200,
+			"balance": "1000000000000000000000",
+			"flags": ["--", "--execution=wasm"]
+		}
+	],
+	"simpleParachains": [
+	],
+	"hrmpChannels": [
+		{
+			"sender": 200,
+			"recipient": 300,
+			"maxCapacity": 8,
+			"maxMessageSize": 512
+		}
+	],
+	"types": {},
+	"finalization": false
+}
