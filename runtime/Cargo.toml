@@ -11,6 +11,10 @@ license = 'Unlicense'
 name = 'statemint-runtime'
 repository = 'https://github.com/paritytech/substrate/'
 version = '2.0.0'
+
+[dependencies]
+smallvec = "1.6.1"
+
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
