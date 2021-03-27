@@ -1,13 +1,13 @@
 pub mod currency {
-    use node_primitives::Balance;
+	use node_primitives::Balance;
 
-    pub const DOTS: Balance = 1_000_000_000_000;
+	pub const DOTS: Balance = 1_000_000_000_000;
 	pub const DOLLARS: Balance = DOTS / 100;       // 10_000_000_000
 	pub const CENTS: Balance = DOLLARS / 100;      // 100_000_000
 	pub const MILLICENTS: Balance = CENTS / 1_000; // 100_000
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
-        // 1/10 of Polkadot v29
+		// 1/10 of Polkadot v29
 		items as Balance * 2 * DOLLARS + (bytes as Balance) * 10 * MILLICENTS
 	}
 }
@@ -18,9 +18,9 @@ pub mod fee {
 	use node_primitives::Balance;
 	// use ExtrinsicBaseWeight;
 	use frame_support::weights::{
-        WeightToFeePolynomial, WeightToFeeCoefficient, WeightToFeeCoefficients,
-        constants::ExtrinsicBaseWeight,
-    };
+		WeightToFeePolynomial, WeightToFeeCoefficient, WeightToFeeCoefficients,
+		constants::ExtrinsicBaseWeight,
+	};
 	use smallvec::smallvec;
 
 	/// The block saturation level. Fees will be updates based on this value.
