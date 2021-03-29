@@ -326,7 +326,7 @@ parameter_types! {
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
-	type Balance = u64;
+	type Balance = u128;
 	type AssetId = u32;
 	type Currency = Balances;
 	// TODO: Change to proportion at least 60% (3/5) of Relay Chain Council.
