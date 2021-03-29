@@ -31,4 +31,9 @@ Statemint is licensed under [Apache 2](LICENSE).
 * polkadot needs to be built off of branch = 'ricardo-assets-xcm'
 
 * Polkadot launch can be run by dropping the proper polkadot binary in bin 
+  * Run Globally 
+    * polkadot-launch config.json
+  * Run locally, navigate into polkadot-launch, 
+    * ``` yarn ```
+    * ``` yarn start ```
 
