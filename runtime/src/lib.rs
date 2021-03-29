@@ -332,7 +332,7 @@ impl pallet_assets::Config for Runtime {
 	// TODO: Change to proportion at least 60% (3/5) of Relay Chain Council.
 	// https://github.com/paritytech/statemint/issues/4
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type AssetDeposit = ExistentialDeposit;
+	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ApprovalDeposit = ApprovalDeposit;
