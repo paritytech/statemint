@@ -316,11 +316,11 @@ impl pallet_sudo::Config for Runtime {
 
 parameter_types! {
 	pub const AssetDeposit: Balance = 100 * EXISTENTIAL_DEPOSIT;
-	pub const ApprovalDeposit: Balance = 1 * EXISTENTIAL_DEPOSIT;
+	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const StringLimit: u32 = 50;
 	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
-	pub const MetadataDepositBase: Balance = deposit(1, 36);
+	pub const MetadataDepositBase: Balance = deposit(1, 68);
 	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
 }
 
@@ -366,11 +366,12 @@ impl pallet_utility::Config for Runtime {
 
 parameter_types! {
     // One storage item; key size 32, value size 8; .
-    pub const ProxyDepositBase: Balance = deposit(1, 8);
+    pub const ProxyDepositBase: Balance = deposit(1, 40);
     // Additional storage item size of 33 bytes.
     pub const ProxyDepositFactor: Balance = deposit(0, 33);
     pub const MaxProxies: u16 = 32;
-    pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+	// One storage item; key size 32, value size 16
+    pub const AnnouncementDepositBase: Balance = deposit(1, 48);
     pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
     pub const MaxPending: u16 = 32;
 }
