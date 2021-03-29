@@ -16,10 +16,10 @@ targets = ['x86_64-unknown-linux-gnu']
 default = ['std']
 runtime-benchmarks = ['frame-benchmarking']
 std = [
-    'codec/std',
-    'frame-support/std',
-    'frame-system/std',
-    'frame-benchmarking/std',
+		'codec/std',
+		'frame-support/std',
+		'frame-system/std',
+		'frame-benchmarking/std',
 ]
 
 [dependencies.codec]
