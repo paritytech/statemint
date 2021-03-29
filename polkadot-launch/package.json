@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"scripts": {
 		"build": "tsc",
-		"start": "yarn build && node dist/index.js config.json",
+		"start": "yarn build && node dist/index.js ../config.json",
 		"lint": "npx prettier --write ."
 	},
 	"dependencies": {
