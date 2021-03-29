@@ -40,3 +40,14 @@ Temporary Items
 # Cargo.lock
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,rust
+
+dist
+node_modules
+*.wasm
+*.log
+rococo-local.json
+rococo-local-raw.json
+rococo-local.json-raw.json
+rococo-local.json.json
+configLocal.json
+Polkadot
