@@ -6,16 +6,20 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub mod constants;
+pub mod impls;
+
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::traits::{
-    AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, Verify,
+	AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify,
 };
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
-    transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, MultiSignature,
+	create_runtime_str, generic, impl_opaque_keys,
+	transaction_validity::{TransactionSource, TransactionValidity},
+	ApplyExtrinsicResult, MultiSignature,
 };
+
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -26,8 +30,11 @@ use frame_system::{
     EnsureRoot,
 };
 
-// XCM imports
+// Polkadot imports
 use polkadot_parachain::primitives::Sibling;
+use polkadot_runtime_common::{
+	BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate,
+};
 use xcm::v0::{Junction, MultiLocation, NetworkId};
 use xcm_builder::{
     AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
@@ -41,22 +48,26 @@ use xcm_executor::{
 
 // A few exports that help ease life for downstream crates.
 use codec::{Decode, Encode};
+use constants::{currency::*, fee::WeightToFee};
 pub use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{InstanceFilter, KeyOwnerProofSystem, Randomness},
-    weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-        DispatchClass, IdentityFee, Weight,
-    },
-    RuntimeDebug, StorageValue,
+	construct_runtime, parameter_types,
+	traits::{Currency, InstanceFilter, KeyOwnerProofSystem, Randomness},
+	weights::{
+		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
+		DispatchClass, IdentityFee, Weight,
+	},
+	RuntimeDebug, StorageValue,
 };
+use impls::DealWithFees;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{Perbill, Permill};
-pub mod constants;
-use constants::currency::*;
+pub use sp_runtime::{Perbill, Permill, Perquintill};
+
+pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::NegativeImbalance;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -152,33 +163,34 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-/// We allow for 2 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
+/// We allow for 0.5 seconds of compute with a 6 second average block time.
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+
+const EXISTENTIAL_DEPOSIT: Balance = 100 * CENTS;
 
 parameter_types! {
-    pub const BlockHashCount: BlockNumber = 250;
-    pub const Version: RuntimeVersion = VERSION;
-    pub RuntimeBlockLength: BlockLength =
-        BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-    pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
-        .base_block(BlockExecutionWeight::get())
-        .for_class(DispatchClass::all(), |weights| {
-            weights.base_extrinsic = ExtrinsicBaseWeight::get();
-        })
-        .for_class(DispatchClass::Normal, |weights| {
-            weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-        })
-        .for_class(DispatchClass::Operational, |weights| {
-            weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
-            // Operational transactions have some extra reserved space, so that they
-            // are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
-            weights.reserved = Some(
-                MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
-            );
-        })
-        .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-        .build_or_panic();
-    pub const SS58Prefix: u8 = 42;
+	pub const Version: RuntimeVersion = VERSION;
+	pub RuntimeBlockLength: BlockLength =
+		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
+		.base_block(BlockExecutionWeight::get())
+		.for_class(DispatchClass::all(), |weights| {
+			weights.base_extrinsic = ExtrinsicBaseWeight::get();
+		})
+		.for_class(DispatchClass::Normal, |weights| {
+			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+		})
+		.for_class(DispatchClass::Operational, |weights| {
+			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+			// Operational transactions have some extra reserved space, so that they
+			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+			weights.reserved = Some(
+				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+			);
+		})
+		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+		.build_or_panic();
+	pub const SS58Prefix: u8 = 0;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -245,8 +257,22 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = 500;
-    pub const MaxLocks: u32 = 50;
+	pub const UncleGenerations: u32 = 0;
+}
+
+impl pallet_authorship::Config for Runtime {
+	// TODO https://github.com/paritytech/statemint/issues/23
+	// Add FindAccountFromAuthorIndex when Aura is integrated
+	type FindAuthor = ();
+	type UncleGenerations = UncleGenerations;
+	type FilterUncle = ();
+	type EventHandler = ();
+}
+
+parameter_types! {
+	/// Same as Polkadot Relay Chain.
+	pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
+	pub const MaxLocks: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -262,14 +288,16 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionByteFee: Balance = 1;
+	/// Relay Chain `TransactionByteFee` / 10
+	pub const TransactionByteFee: Balance = 1 * MILLICENTS;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
-    type TransactionByteFee = TransactionByteFee;
-    type WeightToFee = IdentityFee<Balance>;
-    type FeeMultiplierUpdate = ();
+	type OnChargeTransaction =
+		pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
+	type TransactionByteFee = TransactionByteFee;
+	type WeightToFee = WeightToFee;
+	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -278,27 +306,29 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 100 * DOLLARS;
-    pub const ApprovalDeposit: Balance = 1 * DOLLARS;
-    pub const StringLimit: u32 = 50;
-    pub const MetadataDepositBase: Balance = 10 * DOLLARS;
-    pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
+	pub const AssetDeposit: Balance = 100 * EXISTENTIAL_DEPOSIT;
+	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
+	pub const StringLimit: u32 = 50;
+	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
+	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
+	pub const MetadataDepositBase: Balance = deposit(1, 68);
+	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
 }
 
 impl pallet_assets::Config for Runtime {
-    type Event = Event;
-    type Balance = u64;
-    type AssetId = u32;
-    type Currency = Balances;
-    // TODO: Change to proportion at least 60% (3/5) of Relay Chain Council.
-    // https://github.com/paritytech/statemint/issues/4
-    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-    type AssetDeposit = AssetDeposit;
-    type MetadataDepositBase = MetadataDepositBase;
-    type MetadataDepositPerByte = MetadataDepositPerByte;
-    type ApprovalDeposit = ApprovalDeposit;
-    type StringLimit = StringLimit;
-    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = u32;
+	type Currency = Balances;
+	// TODO: Change to proportion at least 60% (3/5) of Relay Chain Council.
+	// https://github.com/paritytech/statemint/issues/4
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type AssetDeposit = AssetDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -327,11 +357,12 @@ impl pallet_utility::Config for Runtime {
 
 parameter_types! {
     // One storage item; key size 32, value size 8; .
-    pub const ProxyDepositBase: Balance = deposit(1, 8);
+    pub const ProxyDepositBase: Balance = deposit(1, 40);
     // Additional storage item size of 33 bytes.
     pub const ProxyDepositFactor: Balance = deposit(0, 33);
     pub const MaxProxies: u16 = 32;
-    pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+	// One storage item; key size 32, value size 16
+    pub const AnnouncementDepositBase: Balance = deposit(1, 48);
     pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
     pub const MaxPending: u16 = 32;
 }
@@ -497,25 +528,26 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = opaque::Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event},
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
-        ParachainInfo: parachain_info::{Pallet, Storage, Config},
-        XcmHandler: cumulus_pallet_xcm_handler::{Pallet, Event<T>, Origin},
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
-        Utility: pallet_utility::{Pallet, Call, Event},
-        Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
-    }
+	pub enum Runtime where
+		Block = Block,
+		NodeBlock = opaque::Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Authorship: pallet_authorship::{Pallet, Call, Storage},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event},
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+		ParachainInfo: parachain_info::{Pallet, Storage, Config},
+		XcmHandler: cumulus_pallet_xcm_handler::{Pallet, Event<T>, Origin},
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
+		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
+		Utility: pallet_utility::{Pallet, Call, Event},
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
+	}
 );
 
 /// The address format for describing accounts.

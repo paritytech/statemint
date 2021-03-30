@@ -11,6 +11,10 @@ license = 'Unlicense'
 name = 'statemint-runtime'
 repository = 'https://github.com/paritytech/substrate/'
 version = '2.0.0'
+
+[dependencies]
+smallvec = "1.6.1"
+
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
@@ -63,6 +67,11 @@ optional = true
 version = '0.3.1'
 
 [dependencies.pallet-assets]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'master'
+
+[dependencies.pallet-authorship]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 branch = 'master'
@@ -220,6 +229,16 @@ branch = 'ricardo-assets'
 default-features = false
 
 # Polkadot dependencies
+[dependencies.polkadot-primitives]
+git = 'https://github.com/paritytech/polkadot'
+branch = 'ricardo-assets-xcm'
+default-features = false
+
+[dependencies.polkadot-runtime-common]
+git = 'https://github.com/paritytech/polkadot'
+branch = 'ricardo-assets-xcm'
+default-features = false
+
 [dependencies.polkadot-parachain]
 git = 'https://github.com/paritytech/polkadot'
 branch = 'ricardo-assets-xcm'
@@ -276,6 +295,7 @@ std = [
 	'frame-executive/std',
 	'frame-system/std',
 	'pallet-assets/std',
+	'pallet-authorship/std',
 	'pallet-balances/std',
 	'pallet-multisig/std',
 	'pallet-proxy/std',
@@ -293,5 +313,7 @@ std = [
 	'xcm-builder/std',
 	'xcm-executor/std',
 	'cumulus-pallet-xcm-handler/std',
+	'polkadot-runtime-common/std',
+	'polkadot-primitives/std',
 	'template/std',
 ]
