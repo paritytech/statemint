@@ -74,7 +74,7 @@ branch = 'rococo-v1'
 [dependencies.pallet-authorship]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'master'
+branch = 'rococo-v1'
 
 [dependencies.pallet-balances]
 default-features = false
@@ -231,12 +231,12 @@ default-features = false
 # Polkadot dependencies
 [dependencies.polkadot-primitives]
 git = 'https://github.com/paritytech/polkadot'
-branch = 'ricardo-assets-xcm'
+branch = 'rococo-v1'
 default-features = false
 
 [dependencies.polkadot-runtime-common]
 git = 'https://github.com/paritytech/polkadot'
-branch = 'ricardo-assets-xcm'
+branch = 'rococo-v1'
 default-features = false
 
 [dependencies.polkadot-parachain]

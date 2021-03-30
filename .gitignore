@@ -42,12 +42,17 @@ Temporary Items
 # End of https://www.toptal.com/developers/gitignore/api/macos,rust
 
 dist
-node_modules
 *.wasm
 *.log
-rococo-local.json
-rococo-local-raw.json
-rococo-local.json-raw.json
-rococo-local.json.json
+
+# Local Parachains files
+*-genesis
+*-wasm
+*-local.json
+*-raw.json
+
+# Polkadot Launch files
 configLocal.json
-Polkadot
+*.json.json
+node_modules
+/Polkadot
