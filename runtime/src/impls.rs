@@ -51,15 +51,15 @@ where
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance<R>>) {
-		if let Some(fees) = fees_then_tips.next() {
-			// for fees, 100% to author
-			// TODO: Figure out what to do with fees
-			let mut split = fees.ration(0, 100);
+		if let Some(mut fees) = fees_then_tips.next() {
+			// for fees and tips, need simple staking pallet to finish
+			// all the fees should go to the staking pallet (its on_finalize will give half to the author)
+			// all of the tip should go to the author
+			// TODO https://github.com/paritytech/statemint/issues/9
 			if let Some(tips) = fees_then_tips.next() {
-				// for tips, if any, 100% to author
-				tips.merge_into(&mut split.1);
+				tips.merge_into(&mut fees);
 			}
-			<ToAuthor<R> as OnUnbalanced<_>>::on_unbalanced(split.1);
+			<ToAuthor<R> as OnUnbalanced<_>>::on_unbalanced(fees);
 		}
 	}
 }
