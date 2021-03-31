@@ -42,6 +42,10 @@ version = '3.0.0'
 path = '../runtime/statemint'
 version = '2.0.0'
 
+[dependencies.statemine-runtime]
+path = '../runtime/statemine'
+version = '2.0.0'
+
 [dependencies.pallet-transaction-payment-rpc]
 git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'

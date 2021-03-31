@@ -5,9 +5,10 @@ use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use statemint_runtime::{AccountId, Signature};
-
+use statemine_runtime;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
+pub type StatemineChainSpec = sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -52,6 +53,36 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 		ChainType::Local,
 		move || {
 			testnet_genesis(
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+				],
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		None,
+		Extensions {
+			relay_chain: "rococo-dev".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
+pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
+	StatemineChainSpec::from_genesis(
+		// Name
+		"Statemine_Development",
+		// ID
+		"statemine_dev",
+		ChainType::Local,
+		move || {
+			statemine_testnet_genesis(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -132,5 +163,30 @@ fn testnet_genesis(
 		},
 		pallet_sudo: statemint_runtime::SudoConfig { key: root_key },
 		parachain_info: statemint_runtime::ParachainInfoConfig { parachain_id: id },
+	}
+}
+
+
+fn statemine_testnet_genesis(
+	root_key: AccountId,
+	endowed_accounts: Vec<AccountId>,
+	id: ParaId,
+) -> statemine_runtime::GenesisConfig {
+	statemine_runtime::GenesisConfig {
+		frame_system: statemine_runtime::SystemConfig {
+			code: statemine_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		pallet_balances: statemine_runtime::BalancesConfig {
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, 1 << 60))
+				.collect(),
+		},
+		pallet_sudo: statemine_runtime::SudoConfig { key: root_key },
+		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
 	}
 }
