@@ -55,4 +55,4 @@ dist
 configLocal.json
 *.json.json
 node_modules
-/Polkadot
+polkadot

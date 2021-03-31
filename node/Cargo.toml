@@ -39,7 +39,11 @@ branch = 'rococo-v1'
 version = '3.0.0'
 
 [dependencies.statemint-runtime]
-path = '../runtime'
+path = '../runtime/statemint'
+version = '2.0.0'
+
+[dependencies.statemine-runtime]
+path = '../runtime/statemine'
 version = '2.0.0'
 
 [dependencies.pallet-transaction-payment-rpc]

@@ -8,7 +8,7 @@ authors = ['Anonymous']
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Unlicense'
-name = 'statemint-runtime'
+name = 'statemine-runtime'
 repository = 'https://github.com/paritytech/substrate/'
 version = '2.0.0'
 
@@ -262,7 +262,12 @@ default-features = false
 [dependencies.template]
 default-features = false
 package = 'pallet-template'
-path = '../pallets/template'
+path = '../../pallets/template'
+
+[dependencies.runtime-common]
+default-features = false
+path = '../common'
+
 
 [features]
 default = ['std']
@@ -314,6 +319,7 @@ std = [
 	'xcm-executor/std',
 	'cumulus-pallet-xcm-handler/std',
 	'polkadot-runtime-common/std',
+	'runtime-common/std',
 	'polkadot-primitives/std',
 	'template/std',
 ]
