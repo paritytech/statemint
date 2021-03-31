@@ -138,9 +138,6 @@ pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
-// 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
-pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
-
 #[derive(codec::Encode, codec::Decode)]
 pub enum XCMPMessage<XAccountId, XBalance> {
     /// Transfer tokens to the given account from the Parachain account.
@@ -165,7 +162,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
 
-const EXISTENTIAL_DEPOSIT: Balance = 100 * CENTS;
+const EXISTENTIAL_DEPOSIT: Balance = CENTS;
 
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
@@ -189,7 +186,7 @@ parameter_types! {
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
-	pub const SS58Prefix: u8 = 0;
+	pub const SS58Prefix: u8 = 2;
 }
 
 // Configure FRAME pallets to include in runtime.

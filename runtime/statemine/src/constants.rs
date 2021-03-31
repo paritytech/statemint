@@ -1,13 +1,13 @@
 pub mod currency {
-    use node_primitives::Balance;
+	use node_primitives::Balance;
 
 	pub const DOTS: Balance = 1_000_000_000_000;
-	pub const DOLLARS: Balance = DOTS / 100; // 10_000_000_000
-	pub const CENTS: Balance = DOLLARS / 100; // 100_000_000
-	pub const MILLICENTS: Balance = CENTS / 1_000; // 100_000
+	pub const DOLLARS: Balance = DOTS / 6;
+	pub const CENTS: Balance = DOLLARS / 100;
+	pub const MILLICENTS: Balance = CENTS / 1_000;
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
-		// 1/10 of Polkadot v29
+		// map to 1/10 of what the kusama relay chain charges (v29)
 		items as Balance * 2 * DOLLARS + (bytes as Balance) * 10 * MILLICENTS
 	}
 }
@@ -40,7 +40,8 @@ pub mod fee {
 	impl WeightToFeePolynomial for WeightToFee {
 		type Balance = Balance;
 		fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-			// in Polkadot, extrinsic base weight (smallest non-zero weight) is mapped to 1/100 CENT:
+			// in Kusama, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
+			// in Statemine, we map to 1/10 of that, or 1/100 CENT
 			let p = super::currency::CENTS;
 			let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
 			smallvec![WeightToFeeCoefficient {
