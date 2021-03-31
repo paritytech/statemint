@@ -16,7 +16,6 @@
 //! Auxillary struct/enums for Statemint runtime.
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for Statemint.
 
-// use crate::NegativeImbalance;
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
