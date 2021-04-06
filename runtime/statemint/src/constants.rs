@@ -16,7 +16,6 @@ pub mod currency {
 pub mod fee {
 	use node_primitives::Balance;
 	pub use sp_runtime::Perbill;
-	// use ExtrinsicBaseWeight;
 	use frame_support::weights::{
 		constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
 		WeightToFeePolynomial,

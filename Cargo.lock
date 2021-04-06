@@ -6876,7 +6876,10 @@ dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
  "polkadot-runtime-common",
+ "serde",
+ "sp-core",
  "sp-io",
+ "sp-runtime",
  "sp-std",
  "substrate-wasm-builder 4.0.0",
 ]
