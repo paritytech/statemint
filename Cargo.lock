@@ -4582,6 +4582,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-simple-staking"
+version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-society"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=rococo-v1#401c24e8a62cdf058882b0e92815faef966d9fa1"
@@ -4641,20 +4656,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "pallet-template"
-version = "3.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
 ]
 
 [[package]]
@@ -9003,8 +9004,8 @@ dependencies = [
  "pallet-multisig",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
+ "pallet-simple-staking",
  "pallet-sudo",
- "pallet-template",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -9108,8 +9109,8 @@ dependencies = [
  "pallet-multisig",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
+ "pallet-simple-staking",
  "pallet-sudo",
- "pallet-template",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",

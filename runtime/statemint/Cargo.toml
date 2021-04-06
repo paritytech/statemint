@@ -259,10 +259,10 @@ git = 'https://github.com/paritytech/polkadot'
 branch = 'rococo-v1'
 default-features = false
 
-[dependencies.template]
+[dependencies.simple-staking]
 default-features = false
-package = 'pallet-template'
-path = '../../pallets/template'
+package = 'pallet-simple-staking'
+path = '../../pallets/simple-staking'
 
 [dependencies.runtime-common]
 default-features = false
@@ -280,7 +280,7 @@ runtime-benchmarks = [
 	'frame-system/runtime-benchmarks',
 	'pallet-balances/runtime-benchmarks',
 	'pallet-timestamp/runtime-benchmarks',
-	'template/runtime-benchmarks',
+	'simple-staking/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
@@ -323,5 +323,5 @@ std = [
 	'polkadot-runtime-common/std',
 	'runtime-common/std',
 	'polkadot-primitives/std',
-	'template/std',
+	'simple-staking/std',
 ]

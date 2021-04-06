@@ -3,7 +3,7 @@
 use super::*;
 
 #[allow(unused)]
-use crate::Module as Template;
+use crate::Module as simple_staking;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 
@@ -17,4 +17,4 @@ benchmarks! {
 	}
 }
 
-impl_benchmark_test_suite!(Template, crate::mock::new_test_ext(), crate::mock::Test,);
+impl_benchmark_test_suite!(simple_staking, crate::mock::new_test_ext(), crate::mock::Test,);

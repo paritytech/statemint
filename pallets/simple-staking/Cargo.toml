@@ -4,7 +4,7 @@ description = 'FRAME pallet template for defining custom runtime logic.'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Unlicense'
-name = 'pallet-template'
+name = 'pallet-simple-staking'
 readme = 'README.md'
 repository = 'https://github.com/paritytech/substrate/'
 version = '3.0.0'
@@ -20,6 +20,8 @@ std = [
 	'frame-support/std',
 	'frame-system/std',
 	'frame-benchmarking/std',
+	'pallet-balances/std',
+	'sp-runtime/std',
 ]
 
 [dependencies.codec]
@@ -27,6 +29,13 @@ default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
 version = '2.0.0'
+
+[dependencies.pallet-balances]
+default-features = false
+optional = true
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '3.0.0'
 
 [dependencies.frame-benchmarking]
 default-features = false
