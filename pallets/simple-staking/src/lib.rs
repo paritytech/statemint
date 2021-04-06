@@ -16,7 +16,7 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::{Currency, Vec}};
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::{Currency, ReservableCurrency, Vec}};
 	use frame_system::{pallet_prelude::*, ensure_root};
 	use frame_system::Config as SystemConfig;
 	use frame_support::sp_runtime::{
@@ -31,8 +31,10 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type Balance: Member + Parameter + AtLeast32BitUnsigned + Default + Copy;
-
+		/// The currency mechanism.
+		type Currency: ReservableCurrency<Self::AccountId>;
 	}
+	type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
 
 	#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
@@ -55,7 +57,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn authors)]
-	pub type Authors<T: Config> = StorageValue<_, Vec<AuthorInfo<T::AccountId, T::Balance, T::BlockNumber>>, ValueQuery>;
+	pub type Authors<T: Config> = StorageValue<_, Vec<AuthorInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn max_authors)]
@@ -63,7 +65,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn authority_bond)]
-	pub type AuthorityBond<T: Config>= StorageValue<_, T::Balance>;
+	pub type AuthorityBond<T: Config>= StorageValue<_, BalanceOf<T>>;
 
 	
 	#[pallet::event]
@@ -114,13 +116,13 @@ pub mod pallet {
 			ensure_root(origin)?;
 			<MaxAuthors<T>>::put(&max_authors);
 			Self::deposit_event(Event::NewMaxAuthorCount(max_authors));
-			// sets max authors
 			Ok(().into())
 
 		}
 
 		#[pallet::weight(10_000)]
-		fn author_intent(origin: OriginFor<T>, deposit: T::Balance) -> DispatchResultWithPostInfo {
+		fn author_intent(origin: OriginFor<T>, deposit: BalanceOf<T>) -> DispatchResultWithPostInfo {
+			// lock deposit to start or require min?
 			let who = ensure_signed(origin)?;
 			ensure!(<Authors<T>>::decode_len().ok_or(Error::<T>::Unknown)? + 1 <= MaxAuthors::<T>::get().ok_or(Error::<T>::Unknown)? as usize, Error::<T>::MaxAuthors); 
 			let new_author = AuthorInfo {
@@ -129,14 +131,15 @@ pub mod pallet {
 				last_block: frame_system::Pallet::<T>::block_number()
 
 			};
-			//take deposit
 			<Authors<T>>::try_mutate(|authors| -> DispatchResult {
 				let exists = authors.into_iter().any(|author| author.who == who);
+				T::Currency::reserve(&who, deposit)?;
 				match exists {
 					true => Ok(authors.push(new_author)),
 					false => Err(Error::<T>::AlreadyAuthor)?,
 				}
 			})?;
+			// add event
 			Ok(().into())
 		}
 
@@ -145,11 +148,12 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			<Authors<T>>::try_mutate(|authors| -> DispatchResult {
 				let index = authors.iter().position(|author| author.who == who).ok_or(Error::<T>::NotAuthor)?;
+				T::Currency::unreserve(&who, authors[index].deposit);
 				authors.remove(index);
 				Ok(())
 			})?;
-
-
+			
+			// add event
 			Ok(().into())
 
 		}
