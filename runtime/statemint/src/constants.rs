@@ -14,7 +14,7 @@
 // limitations under the License.
 
 pub mod currency {
-    use node_primitives::Balance;
+	use node_primitives::Balance;
 
 	pub const DOTS: Balance = 1_000_000_000_000;
 	pub const DOLLARS: Balance = DOTS / 100; // 10_000_000_000

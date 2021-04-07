@@ -26,11 +26,16 @@ Statemint is licensed under [Apache 2](LICENSE).
 
 ### Temp 
 
-* Pointed the repo towards `rococo-v1` to get the latest version of assets and make it easy to track as the pallet changes 
-* latest known working commit https://github.com/paritytech/substrate/commit/401c24e8a62cdf058882b0e92815faef966d9fa1
-* polkadot needs to be built off of branch = 'rococo-v1'
+* Pointed the repo towards `rococo-v1` branch.
 
-* Polkadot launch can be run by dropping the proper polkadot binary in bin 
+__Commits:__
+```
+"git+https://github.com/paritytech/substrate.git?branch=rococo-v1#3ec97a31b285181fb1beab426ee2a8e2cb1188ab"
+"git+https://github.com/paritytech/polkadot?branch=rococo-v1#a67612b3fc4bca05c324032faa9108a414e9be61"
+"git+https://github.com/paritytech/cumulus.git?branch=rococo-v1#651abcedba1d88f5c00c47d2715820c3bfac9c15"
+```
+
+* **Polkadot launch** can be run by dropping the proper polkadot binary in bin 
   * Run Globally 
     * polkadot-launch config.json
   * Run locally, navigate into polkadot-launch, 
