@@ -16,7 +16,7 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::{Currency, ReservableCurrency, Vec}};
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, inherent::Vec, traits::{Currency, ReservableCurrency}};
 	use frame_system::{pallet_prelude::*, ensure_root};
 	use frame_system::Config as SystemConfig;
 	use frame_support::sp_runtime::{RuntimeDebug};
@@ -135,12 +135,13 @@ pub mod pallet {
 				match exists {
 					false => {
 						T::Currency::reserve(&who, deposit)?;
-						Ok(authors.push(new_author))
+						authors.push(new_author);
+						Self::deposit_event(Event::AuthorAdded(who, deposit));
+						Ok(())
 					},
 					true => Err(Error::<T>::AlreadyAuthor)?,
 				}
 			})?;
-			Self::deposit_event(Event::AuthorAdded(who, deposit));
 			Ok(().into())
 		}
 
