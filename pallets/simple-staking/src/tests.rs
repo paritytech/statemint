@@ -47,15 +47,13 @@ fn author_intent() {
 			deposit: 10, 
 			last_block: 0
 		};
-		assert_eq!(SimpleStaking::authors(), vec![addition]);
 		assert_eq!(Balances::free_balance(1), 90);
 		assert_noop!(SimpleStaking::author_intent(Origin::signed(1), 10), Error::<Test>::MaxAuthors);
 		
-		assert_ok!(SimpleStaking::set_max_author_count(Origin::root(), 5));
-
-		// assert_noop!(SimpleStaking::author_intent(Origin::signed(1), 10), Error::<Test>::AlreadyAuthor);
+		assert_ok!(SimpleStaking::set_max_author_count(Origin::root(), 5));		
+		assert_noop!(SimpleStaking::author_intent(Origin::signed(1), 10), Error::<Test>::AlreadyAuthor);
 		assert_noop!(SimpleStaking::author_intent(Origin::signed(3), 10), BalancesError::<Test>::InsufficientBalance);
-
+		assert_eq!(SimpleStaking::authors(), vec![addition]);
 	});
 }
 

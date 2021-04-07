@@ -132,9 +132,11 @@ pub mod pallet {
 			};
 			<Authors<T>>::try_mutate(|authors| -> DispatchResult {
 				let exists = authors.into_iter().any(|author| author.who == who);
-				T::Currency::reserve(&who, deposit)?;
 				match exists {
-					false => Ok(authors.push(new_author)),
+					false => {
+						T::Currency::reserve(&who, deposit)?;
+						Ok(authors.push(new_author))
+					},
 					true => Err(Error::<T>::AlreadyAuthor)?,
 				}
 			})?;
