@@ -1,3 +1,4 @@
+use super::*;
 use crate as simple_staking;
 use sp_core::H256;
 use frame_support::parameter_types;
@@ -17,6 +18,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		SimpleStaking: simple_staking::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -44,18 +46,43 @@ impl system::Config for Test {
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<u64>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
 	type SS58Prefix = SS58Prefix;
 }
 
-impl pallet_simple_staking::Config for Test {
-	type Event = Event;
+parameter_types! {
+	pub const ExistentialDeposit: u64 = 1;
 }
 
-// Build genesis storage according to the mock runtime.
+impl pallet_balances::Config for Test {
+	type Balance = u64;
+	type Event = Event;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = System;
+	type WeightInfo = ();
+	type MaxLocks = ();
+}
+
+impl Config for Test {
+	type Event = Event;
+	type Currency = Balances;
+}
+
+const A: u64 = 1;
+const B: u64 = 2;
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let genesis = pallet_balances::GenesisConfig::<Test> {
+		balances: vec![
+			(A, 100),
+			(B, 200),
+		],
+	};
+	genesis.assimilate_storage(&mut t).unwrap();
+	t.into()
 }

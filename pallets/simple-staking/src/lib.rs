@@ -19,18 +19,12 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::{Currency, ReservableCurrency, Vec}};
 	use frame_system::{pallet_prelude::*, ensure_root};
 	use frame_system::Config as SystemConfig;
-	use frame_support::sp_runtime::{
-		RuntimeDebug,
-		traits::{
-			AtLeast32BitUnsigned,
-		}
-	};
+	use frame_support::sp_runtime::{RuntimeDebug};
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-		type Balance: Member + Parameter + AtLeast32BitUnsigned + Default + Copy;
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
 	}
@@ -39,9 +33,9 @@ pub mod pallet {
 
 	#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 	pub struct AuthorInfo<AccountId, Balance, BlockNumber> {
-		who: AccountId,
-		deposit: Balance,
-		last_block: BlockNumber
+		pub who: AccountId,
+		pub deposit: Balance,
+		pub last_block: BlockNumber
 	}
 
 	#[pallet::pallet]
@@ -76,6 +70,8 @@ pub mod pallet {
 		/// parameters. [something, who]
 		NewInvulnerables(Vec<T::AccountId>),
 		NewMaxAuthorCount(u32),
+		AuthorAdded(T::AccountId, BalanceOf<T>),
+		AuthorRemoved(T::AccountId)
 	}
 
 	// Errors inform users that something went wrong.
@@ -90,8 +86,8 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		// on init add to aura set at next era 
-		// split half the pot to the author per block
+		//TODO on init (or finalize) add to aura set at next era 
+		//TODO split half the pot to the author per block
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -102,8 +98,8 @@ pub mod pallet {
 
 
 		#[pallet::weight(10_000)]
-		fn set_invulnerables(origin: OriginFor<T>, new: Vec<T::AccountId>) -> DispatchResultWithPostInfo {
-			//TODO chose protective scheme
+		pub fn set_invulnerables(origin: OriginFor<T>, new: Vec<T::AccountId>) -> DispatchResultWithPostInfo {
+			//TODO chose protective scheme requires message from relay chain 
 			ensure_root(origin)?;
 			<Invulnerables<T>>::put(&new);
 			Self::deposit_event(Event::NewInvulnerables(new));
@@ -111,8 +107,8 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000)]
-		fn set_max_author_count(origin: OriginFor<T>, max_authors: u32) -> DispatchResultWithPostInfo {
-			//TODO chose protective scheme
+		pub fn set_max_author_count(origin: OriginFor<T>, max_authors: u32) -> DispatchResultWithPostInfo {
+			//TODO chose protective scheme requires message from relay chain 
 			ensure_root(origin)?;
 			<MaxAuthors<T>>::put(&max_authors);
 			Self::deposit_event(Event::NewMaxAuthorCount(max_authors));
@@ -121,30 +117,33 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000)]
-		fn author_intent(origin: OriginFor<T>, deposit: BalanceOf<T>) -> DispatchResultWithPostInfo {
+		pub fn author_intent(origin: OriginFor<T>, deposit: BalanceOf<T>) -> DispatchResultWithPostInfo {
 			// lock deposit to start or require min?
 			let who = ensure_signed(origin)?;
-			ensure!(<Authors<T>>::decode_len().ok_or(Error::<T>::Unknown)? + 1 <= MaxAuthors::<T>::get().ok_or(Error::<T>::Unknown)? as usize, Error::<T>::MaxAuthors); 
+			let length = match <Authors<T>>::decode_len() {
+				Some(len) => len,
+				None => 0
+			};
+			ensure!(length + 1 <= MaxAuthors::<T>::get().ok_or(Error::<T>::MaxAuthors)? as usize, Error::<T>::MaxAuthors); 
 			let new_author = AuthorInfo {
 				who: who.clone(), 
 				deposit, 
 				last_block: frame_system::Pallet::<T>::block_number()
-
 			};
 			<Authors<T>>::try_mutate(|authors| -> DispatchResult {
 				let exists = authors.into_iter().any(|author| author.who == who);
 				T::Currency::reserve(&who, deposit)?;
 				match exists {
-					true => Ok(authors.push(new_author)),
-					false => Err(Error::<T>::AlreadyAuthor)?,
+					false => Ok(authors.push(new_author)),
+					true => Err(Error::<T>::AlreadyAuthor)?,
 				}
 			})?;
-			// add event
+			Self::deposit_event(Event::AuthorAdded(who, deposit));
 			Ok(().into())
 		}
 
 		#[pallet::weight(10_000)]
-		fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			<Authors<T>>::try_mutate(|authors| -> DispatchResult {
 				let index = authors.iter().position(|author| author.who == who).ok_or(Error::<T>::NotAuthor)?;
@@ -152,8 +151,7 @@ pub mod pallet {
 				authors.remove(index);
 				Ok(())
 			})?;
-			
-			// add event
+			Self::deposit_event(Event::AuthorRemoved(who));
 			Ok(().into())
 
 		}

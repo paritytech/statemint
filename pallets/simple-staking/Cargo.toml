@@ -20,7 +20,6 @@ std = [
 	'frame-support/std',
 	'frame-system/std',
 	'frame-benchmarking/std',
-	'pallet-balances/std',
 	'sp-runtime/std',
 ]
 
@@ -30,9 +29,8 @@ features = ['derive']
 package = 'parity-scale-codec'
 version = '2.0.0'
 
-[dependencies.pallet-balances]
+[dev-dependencies.pallet-balances]
 default-features = false
-optional = true
 git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 version = '3.0.0'
