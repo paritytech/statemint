@@ -127,12 +127,12 @@ pub mod pallet {
 			};
 			<Authors<T>>::try_mutate(|authors| -> DispatchResult {
 				if authors.into_iter().any(|author| author.who == who) {
+					Err(Error::<T>::AlreadyAuthor)?
+				} else {
 					T::Currency::reserve(&who, deposit)?;
 					authors.push(new_author);
 					Self::deposit_event(Event::AuthorAdded(who, deposit));
 					Ok(())
-				} else {
-					Err(Error::<T>::AlreadyAuthor)?
 				}
 			})?;
 			Ok(().into())

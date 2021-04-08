@@ -30,7 +30,7 @@ fn set_max_author_count() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(SimpleStaking::set_max_author_count(Origin::root(), 7));
 		assert_noop!(SimpleStaking::set_max_author_count(Origin::signed(1), 8), BadOrigin);
-		assert_eq!(SimpleStaking::max_authors(), Some(7));
+		assert_eq!(SimpleStaking::max_authors(), 7);
 	});
 }
 
