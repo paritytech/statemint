@@ -32,7 +32,7 @@ pub mod pallet {
 	pub struct AuthorInfo<AccountId, Balance, BlockNumber> {
 		pub who: AccountId,
 		pub deposit: Balance,
-		pub last_block: BlockNumber
+		pub last_block: Option<BlockNumber>
 	}
 	pub type AuthorInfoOf<T> = AuthorInfo<<T as SystemConfig>::AccountId, <T as Currency<<T as SystemConfig>::AccountId>>::Balance, <T as frame_system::Config>::BlockNumber>;
 
@@ -56,6 +56,10 @@ pub mod pallet {
 	pub type MaxAuthors<T> = StorageValue<_, u32, ValueQuery>; 
 
 	#[pallet::storage]
+	#[pallet::getter(fn author_bond)]
+	pub type AuthorBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>; 
+
+	#[pallet::storage]
 	#[pallet::getter(fn authority_bond)]
 	pub type AuthorityBond<T: Config>= StorageValue<_, BalanceOf<T>>;
 
@@ -68,6 +72,7 @@ pub mod pallet {
 		/// parameters. [something, who]
 		NewInvulnerables(Vec<T::AccountId>),
 		NewMaxAuthorCount(u32),
+		NewAuthorBond(BalanceOf<T>),
 		AuthorAdded(T::AccountId, BalanceOf<T>),
 		AuthorRemoved(T::AccountId)
 	}
@@ -114,16 +119,28 @@ pub mod pallet {
 
 		}
 
+
 		#[pallet::weight(10_000)]
-		pub fn author_intent(origin: OriginFor<T>, deposit: BalanceOf<T>) -> DispatchResultWithPostInfo {
+		pub fn set_author_bond(origin: OriginFor<T>, author_bond: BalanceOf<T>) -> DispatchResultWithPostInfo {
+			//TODO chose protective scheme requires message from relay chain 
+			ensure_root(origin)?;
+			<AuthorBond<T>>::put(&author_bond);
+			Self::deposit_event(Event::NewAuthorBond(author_bond));
+			Ok(().into())
+
+		}
+
+		#[pallet::weight(10_000)]
+		pub fn register_as_author(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			// lock deposit to start or require min?
 			let who = ensure_signed(origin)?;
+			let deposit = <AuthorBond<T>>::get();
 			let length = <Authors<T>>::decode_len().unwrap_or_default();
 			ensure!((length as u32) < MaxAuthors::<T>::get(), Error::<T>::MaxAuthors); 
 			let new_author = AuthorInfo {
 				who: who.clone(), 
-				deposit, 
-				last_block: frame_system::Pallet::<T>::block_number()
+				deposit,
+				last_block: None
 			};
 			<Authors<T>>::try_mutate(|authors| -> DispatchResult {
 				if authors.into_iter().any(|author| author.who == who) {

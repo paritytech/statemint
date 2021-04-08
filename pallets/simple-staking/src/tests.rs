@@ -35,24 +35,34 @@ fn set_max_author_count() {
 }
 
 #[test]
-fn author_intent() {
+fn set_author_bond() {
 	new_test_ext().execute_with(|| {
-		assert_noop!(SimpleStaking::author_intent(Origin::signed(1), 10), Error::<Test>::MaxAuthors);
+		assert_ok!(SimpleStaking::set_author_bond(Origin::root(), 7));
+		assert_noop!(SimpleStaking::set_author_bond(Origin::signed(1), 8), BadOrigin);
+		assert_eq!(SimpleStaking::author_bond(), 7);
+	});
+}
+
+#[test]
+fn register_as_author() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(SimpleStaking::register_as_author(Origin::signed(1)), Error::<Test>::MaxAuthors);
 		
+		assert_ok!(SimpleStaking::set_author_bond(Origin::root(), 10));
 		assert_ok!(SimpleStaking::set_max_author_count(Origin::root(), 1));
-		assert_ok!(SimpleStaking::author_intent(Origin::signed(1), 10));
+		assert_ok!(SimpleStaking::register_as_author(Origin::signed(1)));
 
 		let addition = AuthorInfo {
 			who: 1, 
 			deposit: 10, 
-			last_block: 0
+			last_block: None
 		};
 		assert_eq!(Balances::free_balance(1), 90);
-		assert_noop!(SimpleStaking::author_intent(Origin::signed(1), 10), Error::<Test>::MaxAuthors);
+		assert_noop!(SimpleStaking::register_as_author(Origin::signed(1)), Error::<Test>::MaxAuthors);
 		
 		assert_ok!(SimpleStaking::set_max_author_count(Origin::root(), 5));		
-		assert_noop!(SimpleStaking::author_intent(Origin::signed(1), 10), Error::<Test>::AlreadyAuthor);
-		assert_noop!(SimpleStaking::author_intent(Origin::signed(3), 10), BalancesError::<Test>::InsufficientBalance);
+		assert_noop!(SimpleStaking::register_as_author(Origin::signed(1)), Error::<Test>::AlreadyAuthor);
+		assert_noop!(SimpleStaking::register_as_author(Origin::signed(3)), BalancesError::<Test>::InsufficientBalance);
 		assert_eq!(SimpleStaking::authors(), vec![addition]);
 	});
 }
@@ -61,7 +71,8 @@ fn author_intent() {
 fn leave_intent() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(SimpleStaking::set_max_author_count(Origin::root(), 1));
-		assert_ok!(SimpleStaking::author_intent(Origin::signed(1), 10));
+		assert_ok!(SimpleStaking::set_author_bond(Origin::root(), 10));
+		assert_ok!(SimpleStaking::register_as_author(Origin::signed(1)));
 		assert_noop!(SimpleStaking::leave_intent(Origin::signed(3)), Error::<Test>::NotAuthor);
 		assert_ok!(SimpleStaking::leave_intent(Origin::signed(1)));
 		assert_eq!(SimpleStaking::authors(), vec![]);
