@@ -34,6 +34,7 @@ pub mod pallet {
 		pub deposit: Balance,
 		pub last_block: BlockNumber
 	}
+	pub type AuthorInfoOf<T> = AuthorInfo<<T as Config>::AccountId, <T as Config>::Balance, <T as frame_system::Config>::BlockNumber>;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
