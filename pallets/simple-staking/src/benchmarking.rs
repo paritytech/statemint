@@ -3,7 +3,7 @@
 use super::*;
 
 #[allow(unused)]
-use crate::Module as simple_staking;
+use crate::Pallet as SimpleStaking;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 
