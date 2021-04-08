@@ -50,13 +50,14 @@ back ends would be a great contribution, not only for Statemint.
 #### What will the fees be like?
 
 The deposits and fees in the Statemint runtime are set to 10% of the levels of the Relay Chain.
-That is, generally speaking, transaction fees should be about\* 1/10 of what they would be on the
-Relay Chain (and likewise for deposits such as proxy and multisig). The exception here is the
+That is, generally speaking, transaction fees should be approximately\* 1/10 of what they would be
+on the Relay Chain (and likewise for deposits such as proxy and multisig). The exception here is the
 _existential deposit,_ which remains equivalent to the Relay Chain's for user sanity.
 
-\* They will not match exactly. Parachains have lower weight limits per block than the Relay Chain,
-and fees change depending on block fullness. So if Statemint blocks are more full than the Relay
-Chain blocks for some period of time, the fees would be higher than 1/10 those of the Relay Chain.
+\* They will not be exactly 1/10. Parachains have lower weight limits per block than the Relay
+Chain, and fees change depending on block fullness. So if Statemint blocks are more full than the
+Relay Chain blocks for some period of time, the fees would be higher than 1/10 those of the Relay
+Chain.
 
 #### Can I run a collator?
 
