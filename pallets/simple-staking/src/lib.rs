@@ -34,7 +34,7 @@ pub mod pallet {
 		pub deposit: Balance,
 		pub last_block: BlockNumber
 	}
-	pub type AuthorInfoOf<T> = AuthorInfo<<T as Config>::AccountId, <T as Config>::Balance, <T as frame_system::Config>::BlockNumber>;
+	pub type AuthorInfoOf<T> = AuthorInfo<<T as SystemConfig>::AccountId, <T as Currency<<T as SystemConfig>::AccountId>>::Balance, <T as frame_system::Config>::BlockNumber>;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -53,7 +53,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn max_authors)]
-	pub type MaxAuthors<T> = StorageValue<_, u32>; 
+	pub type MaxAuthors<T> = StorageValue<_, u32, ValueQuery>; 
 
 	#[pallet::storage]
 	#[pallet::getter(fn authority_bond)]
@@ -61,8 +61,7 @@ pub mod pallet {
 
 	
 	#[pallet::event]
-	#[pallet::metadata(T::AccountId = "AccountId")]
-	#[pallet::metadata(BalanceOf<T> = "Balance")]
+	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
@@ -119,8 +118,8 @@ pub mod pallet {
 		pub fn author_intent(origin: OriginFor<T>, deposit: BalanceOf<T>) -> DispatchResultWithPostInfo {
 			// lock deposit to start or require min?
 			let who = ensure_signed(origin)?;
-			let length = match <Authors<T>>::decode_len().unwrap_or_default();
-			ensure!(length as u32 < MaxAuthors::<T>::get(), Error::<T>::MaxAuthors); 
+			let length = <Authors<T>>::decode_len().unwrap_or_default();
+			ensure!((length as u32) < MaxAuthors::<T>::get(), Error::<T>::MaxAuthors); 
 			let new_author = AuthorInfo {
 				who: who.clone(), 
 				deposit, 
@@ -133,7 +132,7 @@ pub mod pallet {
 					Self::deposit_event(Event::AuthorAdded(who, deposit));
 					Ok(())
 				} else {
-					Err(Error::<T>::AlreadyAuthor)
+					Err(Error::<T>::AlreadyAuthor)?
 				}
 			})?;
 			Ok(().into())
