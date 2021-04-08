@@ -127,15 +127,13 @@ pub mod pallet {
 				last_block: frame_system::Pallet::<T>::block_number()
 			};
 			<Authors<T>>::try_mutate(|authors| -> DispatchResult {
-				let exists = authors.into_iter().any(|author| author.who == who);
-				match exists {
-					false => {
-						T::Currency::reserve(&who, deposit)?;
-						authors.push(new_author);
-						Self::deposit_event(Event::AuthorAdded(who, deposit));
-						Ok(())
-					},
-					true => Err(Error::<T>::AlreadyAuthor)?,
+				if authors.into_iter().any(|author| author.who == who) {
+					T::Currency::reserve(&who, deposit)?;
+					authors.push(new_author);
+					Self::deposit_event(Event::AuthorAdded(who, deposit));
+					Ok(())
+				} else {
+					Err(Error::<T>::AlreadyAuthor)
 				}
 			})?;
 			Ok(().into())
