@@ -120,7 +120,7 @@ pub mod pallet {
 			// lock deposit to start or require min?
 			let who = ensure_signed(origin)?;
 			let length = match <Authors<T>>::decode_len().unwrap_or_default();
-			ensure!(length + 1 <= MaxAuthors::<T>::get().ok_or(Error::<T>::MaxAuthors)? as usize, Error::<T>::MaxAuthors); 
+			ensure!(length as u32 < MaxAuthors::<T>::get(), Error::<T>::MaxAuthors); 
 			let new_author = AuthorInfo {
 				who: who.clone(), 
 				deposit, 
