@@ -119,10 +119,7 @@ pub mod pallet {
 		pub fn author_intent(origin: OriginFor<T>, deposit: BalanceOf<T>) -> DispatchResultWithPostInfo {
 			// lock deposit to start or require min?
 			let who = ensure_signed(origin)?;
-			let length = match <Authors<T>>::decode_len() {
-				Some(len) => len,
-				None => 0
-			};
+			let length = match <Authors<T>>::decode_len().unwrap_or_default();
 			ensure!(length + 1 <= MaxAuthors::<T>::get().ok_or(Error::<T>::MaxAuthors)? as usize, Error::<T>::MaxAuthors); 
 			let new_author = AuthorInfo {
 				who: who.clone(), 
