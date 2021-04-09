@@ -73,15 +73,12 @@ impl Config for Test {
 	type Currency = Balances;
 }
 
-const A: u64 = 1;
-const B: u64 = 2;
-
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let genesis = pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
-			(A, 100),
-			(B, 200),
+			(1, 100),
+			(1, 200),
 		],
 	};
 	genesis.assimilate_storage(&mut t).unwrap();

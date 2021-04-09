@@ -42,7 +42,7 @@ pub mod pallet {
 
 	// The pallet's runtime storage items.
 	// https://substrate.dev/docs/en/knowledgebase/runtime/storage
-	
+
 	#[pallet::storage]
 	#[pallet::getter(fn invulnerables)]
 	pub type Invulnerables<T: Config>= StorageValue<_, Vec<T::AccountId>>;
@@ -53,17 +53,17 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn max_authors)]
-	pub type MaxAuthors<T> = StorageValue<_, u32, ValueQuery>; 
+	pub type MaxAuthors<T> = StorageValue<_, u32, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn author_bond)]
-	pub type AuthorBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>; 
+	pub type AuthorBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn authority_bond)]
 	pub type AuthorityBond<T: Config>= StorageValue<_, BalanceOf<T>>;
 
-	
+
 	#[pallet::event]
 	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -89,7 +89,7 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		//TODO on init (or finalize) add to aura set at next era 
+		//TODO on init (or finalize) add to aura set at next era
 		//TODO split half the pot to the author per block
 	}
 
@@ -102,7 +102,7 @@ pub mod pallet {
 
 		#[pallet::weight(10_000)]
 		pub fn set_invulnerables(origin: OriginFor<T>, new: Vec<T::AccountId>) -> DispatchResultWithPostInfo {
-			//TODO chose protective scheme requires message from relay chain 
+			//TODO chose protective scheme requires message from relay chain
 			ensure_root(origin)?;
 			<Invulnerables<T>>::put(&new);
 			Self::deposit_event(Event::NewInvulnerables(new));
@@ -111,7 +111,7 @@ pub mod pallet {
 
 		#[pallet::weight(10_000)]
 		pub fn set_max_author_count(origin: OriginFor<T>, max_authors: u32) -> DispatchResultWithPostInfo {
-			//TODO chose protective scheme requires message from relay chain 
+			//TODO chose protective scheme requires message from relay chain
 			ensure_root(origin)?;
 			<MaxAuthors<T>>::put(&max_authors);
 			Self::deposit_event(Event::NewMaxAuthorCount(max_authors));
@@ -122,7 +122,7 @@ pub mod pallet {
 
 		#[pallet::weight(10_000)]
 		pub fn set_author_bond(origin: OriginFor<T>, author_bond: BalanceOf<T>) -> DispatchResultWithPostInfo {
-			//TODO chose protective scheme requires message from relay chain 
+			//TODO chose protective scheme requires message from relay chain
 			ensure_root(origin)?;
 			<AuthorBond<T>>::put(&author_bond);
 			Self::deposit_event(Event::NewAuthorBond(author_bond));
@@ -136,9 +136,9 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			let deposit = <AuthorBond<T>>::get();
 			let length = <Authors<T>>::decode_len().unwrap_or_default();
-			ensure!((length as u32) < MaxAuthors::<T>::get(), Error::<T>::MaxAuthors); 
+			ensure!((length as u32) < MaxAuthors::<T>::get(), Error::<T>::MaxAuthors);
 			let new_author = AuthorInfo {
-				who: who.clone(), 
+				who: who.clone(),
 				deposit,
 				last_block: None
 			};
