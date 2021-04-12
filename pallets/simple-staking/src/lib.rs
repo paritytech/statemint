@@ -13,7 +13,7 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, inherent::Vec, traits::{Currency, ReservableCurrency}};
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, inherent::Vec, traits::{Currency, ReservableCurrency, EnsureOrigin}};
 	use frame_system::{pallet_prelude::*, ensure_root};
 	use frame_system::Config as SystemConfig;
 	use frame_support::sp_runtime::{RuntimeDebug};
@@ -24,6 +24,8 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
+
+		type UpdateOrigin: EnsureOrigin<Self::Origin>;
 	}
 	type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
@@ -102,8 +104,7 @@ pub mod pallet {
 
 		#[pallet::weight(10_000)]
 		pub fn set_invulnerables(origin: OriginFor<T>, new: Vec<T::AccountId>) -> DispatchResultWithPostInfo {
-			//TODO chose protective scheme requires message from relay chain
-			ensure_root(origin)?;
+			T::UpdateOrigin::ensure_origin(origin)?;
 			<Invulnerables<T>>::put(&new);
 			Self::deposit_event(Event::NewInvulnerables(new));
 			Ok(().into())
@@ -111,8 +112,7 @@ pub mod pallet {
 
 		#[pallet::weight(10_000)]
 		pub fn set_max_author_count(origin: OriginFor<T>, max_authors: u32) -> DispatchResultWithPostInfo {
-			//TODO chose protective scheme requires message from relay chain
-			ensure_root(origin)?;
+			T::UpdateOrigin::ensure_origin(origin)?;
 			<MaxAuthors<T>>::put(&max_authors);
 			Self::deposit_event(Event::NewMaxAuthorCount(max_authors));
 			Ok(().into())
@@ -122,8 +122,7 @@ pub mod pallet {
 
 		#[pallet::weight(10_000)]
 		pub fn set_author_bond(origin: OriginFor<T>, author_bond: BalanceOf<T>) -> DispatchResultWithPostInfo {
-			//TODO chose protective scheme requires message from relay chain
-			ensure_root(origin)?;
+			T::UpdateOrigin::ensure_origin(origin)?;
 			<AuthorBond<T>>::put(&author_bond);
 			Self::deposit_event(Event::NewAuthorBond(author_bond));
 			Ok(().into())

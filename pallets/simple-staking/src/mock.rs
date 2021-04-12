@@ -1,10 +1,11 @@
 use super::*;
 use crate as simple_staking;
 use sp_core::H256;
-use frame_support::parameter_types;
+use frame_support::{parameter_types, ord_parameter_types};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup}, testing::Header,
 };
+use frame_system::{EnsureSignedBy};
 use frame_system as system;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -68,9 +69,14 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 }
 
+ord_parameter_types! {
+	pub const Three: u64 = 3;
+}
+
 impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
+	type UpdateOrigin = EnsureSignedBy<Three, u64>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -78,7 +84,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let genesis = pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
 			(1, 100),
-			(1, 200),
+			(2, 200),
 		],
 	};
 	genesis.assimilate_storage(&mut t).unwrap();
