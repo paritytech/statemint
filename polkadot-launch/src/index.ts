@@ -74,10 +74,10 @@ async function main() {
 	}
 	const chain = config.relaychain.chain;
 	await generateChainSpec(relay_chain_bin, chain);
-	clearAuthorities(`${chain}.json`);
-	for (const node of config.relaychain.nodes) {
-		await addAuthority(`${chain}.json`, node.name);
-	}
+	// clearAuthorities(`${chain}.json`);
+	// for (const node of config.relaychain.nodes) {
+	// 	await addAuthority(`${chain}.json`, node.name);
+	// }
 	await generateChainSpecRaw(relay_chain_bin, chain);
 	const spec = resolve(`${chain}-raw.json`);
 	const { name, wsPort, port, flags } = config.relaychain.nodes[0];
