@@ -1,6 +1,6 @@
 use super::*;
 use crate::{mock::*, Error, AuthorInfo};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use super::Event as StakingEvent;
 use sp_runtime::traits::BadOrigin;
 use frame_system::EventRecord;
@@ -47,14 +47,14 @@ fn set_author_bond() {
 fn register_as_author() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(SimpleStaking::register_as_author(Origin::signed(1)), Error::<Test>::MaxAuthors);
-		
+
 		assert_ok!(SimpleStaking::set_author_bond(Origin::signed(3), 10));
 		assert_ok!(SimpleStaking::set_max_author_count(Origin::signed(3), 1));
 		assert_ok!(SimpleStaking::register_as_author(Origin::signed(1)));
 
 		let addition = AuthorInfo {
-			who: 1, 
-			deposit: 10, 
+			who: 1,
+			deposit: 10,
 			last_block: None
 		};
 		assert_eq!(Balances::free_balance(1), 90);
@@ -77,5 +77,14 @@ fn leave_intent() {
 		assert_ok!(SimpleStaking::leave_intent(Origin::signed(1)));
 		assert_eq!(SimpleStaking::authors(), vec![]);
 		assert_eq!(Balances::free_balance(1), 100);
+	});
+}
+
+#[test]
+fn on_init() {
+	new_test_ext().execute_with(|| {
+		SimpleStaking::on_initialize(1);
+		assert_eq!(Balances::free_balance(4), 50);
+		assert_eq!(Balances::free_balance(5), 50);
 	});
 }

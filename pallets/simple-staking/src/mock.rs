@@ -1,9 +1,9 @@
 use super::*;
 use crate as simple_staking;
 use sp_core::H256;
-use frame_support::{parameter_types, ord_parameter_types};
+use frame_support::{parameter_types, ord_parameter_types, traits::{FindAuthor}};
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup}, testing::Header,
+	traits::{BlakeTwo256, IdentityLookup}, testing::{Header, UintAuthorityId},
 };
 use sp_consensus_aura::sr25519::AuthorityId;
 use frame_system::{EnsureSignedBy};
@@ -73,12 +73,17 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 }
 
-parameter_types! {
-	pub const Author: u64 = 4;
+pub struct Author4;
+impl FindAuthor<u64> for Author4 {
+	fn find_author<'a, I>(_digests: I) -> Option<u64>
+		where I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
+	{
+		Some(4)
+	}
 }
 
 impl pallet_authorship::Config for Test {
-	type FindAuthor = ();
+	type FindAuthor = Author4;
 	type UncleGenerations = ();
 	type FilterUncle = ();
 	type EventHandler = ();
@@ -113,13 +118,13 @@ impl Config for Test {
 	type TreasuryAddress = TreasuryAddress;
 }
 
-
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let genesis = pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
 			(1, 100),
 			(2, 200),
+			(5, 100),
 		],
 	};
 	genesis.assimilate_storage(&mut t).unwrap();
