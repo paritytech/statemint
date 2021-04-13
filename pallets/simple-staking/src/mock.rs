@@ -5,6 +5,7 @@ use frame_support::{parameter_types, ord_parameter_types};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup}, testing::Header,
 };
+use sp_consensus_aura::sr25519::AuthorityId;
 use frame_system::{EnsureSignedBy};
 use frame_system as system;
 
@@ -19,8 +20,11 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Aura: pallet_aura::{Pallet, Call, Storage, Config<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		SimpleStaking: simple_staking::{Pallet, Call, Storage, Event<T>},
+		Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
 	}
 );
 
@@ -69,15 +73,46 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 }
 
+parameter_types! {
+	pub const Author: u64 = 4;
+}
+
+impl pallet_authorship::Config for Test {
+	type FindAuthor = ();
+	type UncleGenerations = ();
+	type FilterUncle = ();
+	type EventHandler = ();
+}
+
+parameter_types! {
+	pub const MinimumPeriod: u64 = 1;
+}
+
+impl pallet_timestamp::Config for Test {
+	type Moment = u64;
+	type OnTimestampSet = Aura;
+	type MinimumPeriod = MinimumPeriod;
+	type WeightInfo = ();
+}
+
+impl pallet_aura::Config for Test {
+	type AuthorityId = AuthorityId;
+}
+
+
 ord_parameter_types! {
 	pub const Three: u64 = 3;
 }
-
+parameter_types! {
+	pub const TreasuryAddress: u64 = 5;
+}
 impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = EnsureSignedBy<Three, u64>;
+	type TreasuryAddress = TreasuryAddress;
 }
+
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();

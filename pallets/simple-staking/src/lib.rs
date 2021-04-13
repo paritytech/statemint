@@ -100,8 +100,8 @@ pub mod pallet {
 			let treasury = T::TreasuryAddress::get();
 			let reward = T::Currency::free_balance(&treasury).div(2u32.into());
 			T::Currency::transfer(&treasury, &author, reward, KeepAlive);
-			// weight 3 reads (author, treasury, balance) 2 writes (one transfer, write out and in)
-			T::DbWeight::get().reads_writes(3, 2)
+			// TODO double check: weight 3 reads (author, treasury, balance) 1 writes (transfer)
+			T::DbWeight::get().reads_writes(3, 1)
 		}
 		//TODO on init (or finalize) add to aura set at next era
 	}
