@@ -17,11 +17,6 @@
 				"name": "charlie",
 				"wsPort": 9966,
 				"port": 30666
-			},
-			{
-				"name": "dave",
-				"wsPort": 9977,
-				"port": 30777
 			}
 		]
 	},
