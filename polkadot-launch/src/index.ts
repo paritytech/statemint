@@ -93,7 +93,7 @@ async function main() {
 			const { name, wsPort, port, flags } = node;
 			console.log(`Starting ${name}...`);
 			let addresses = await listenAddresses(relayChainApi)
-			await addBootNodes(`${chain}-raw.json`, addresses);
+			//await addBootNodes(`${chain}-raw.json`, addresses);
 
 			// We spawn a `child_process` starting a node, and then wait until we
 			// able to connect to it using PolkadotJS in order to know its running.
