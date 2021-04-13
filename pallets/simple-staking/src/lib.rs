@@ -13,19 +13,23 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, inherent::Vec, traits::{Currency, ReservableCurrency, EnsureOrigin}};
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, inherent::Vec, traits::{Currency, ReservableCurrency, EnsureOrigin, ExistenceRequirement::{KeepAlive, AllowDeath}}};
 	use frame_system::{pallet_prelude::*, ensure_root};
 	use frame_system::Config as SystemConfig;
 	use frame_support::sp_runtime::{RuntimeDebug};
+	use pallet_authorship as authorship;
+	use core::ops::{Div};
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + authorship::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
 
 		type UpdateOrigin: EnsureOrigin<Self::Origin>;
+
+		type TreasuryAddress: Get<Self::AccountId>;
 	}
 	type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
@@ -91,8 +95,15 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(_: T::BlockNumber) -> Weight {
+			let author = <authorship::Module<T>>::author();
+			let treasury = T::TreasuryAddress::get();
+			let reward = T::Currency::free_balance(&treasury).div(2u32.into());
+			T::Currency::transfer(&treasury, &author, reward, KeepAlive);
+			// weight 3 reads (author, treasury, balance) 2 writes (one transfer, write out and in)
+			T::DbWeight::get().reads_writes(3, 2)
+		}
 		//TODO on init (or finalize) add to aura set at next era
-		//TODO split half the pot to the author per block
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
