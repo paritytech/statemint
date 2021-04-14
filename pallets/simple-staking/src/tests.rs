@@ -21,7 +21,7 @@ fn it_should_set_invulnerables() {
 		// 	mock::Event::simple_staking(crate::Event::NewInvulnerables(new_handlers.clone())),
 		// );
 		assert_noop!(SimpleStaking::set_invulnerables(Origin::signed(1), new_handlers.clone()), BadOrigin);
-		assert_eq!(SimpleStaking::invulnerables(), Some(new_handlers));
+		assert_eq!(SimpleStaking::invulnerables(), new_handlers);
 	});
 }
 
@@ -86,5 +86,13 @@ fn on_init() {
 		SimpleStaking::on_initialize(1);
 		assert_eq!(Balances::free_balance(4), 50);
 		assert_eq!(Balances::free_balance(5), 50);
+	});
+}
+
+#[test]
+fn on_genesis() {
+	new_test_ext().execute_with(|| {
+		assert_eq!(SimpleStaking::invulnerables(), vec![1,2,3]);
+		assert_eq!(SimpleStaking::invulnerables().len(), 3);
 	});
 }

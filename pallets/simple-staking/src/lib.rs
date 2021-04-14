@@ -51,7 +51,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn invulnerables)]
-	pub type Invulnerables<T: Config>= StorageValue<_, Vec<T::AccountId>>;
+	pub type Invulnerables<T: Config>= StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn authors)]
@@ -69,6 +69,26 @@ pub mod pallet {
 	#[pallet::getter(fn authority_bond)]
 	pub type AuthorityBond<T: Config>= StorageValue<_, BalanceOf<T>>;
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		pub invulnerables: Vec<T::AccountId>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			Self {
+				invulnerables: Default::default(),
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			<Invulnerables<T>>::put(&self.invulnerables);
+		}
+	}
 
 	#[pallet::event]
 	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]

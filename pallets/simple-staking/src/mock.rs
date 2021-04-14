@@ -1,7 +1,7 @@
 use super::*;
 use crate as simple_staking;
 use sp_core::H256;
-use frame_support::{parameter_types, ord_parameter_types, traits::{FindAuthor}};
+use frame_support::{parameter_types, ord_parameter_types, traits::{FindAuthor, GenesisBuild}};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup}, testing::{Header, UintAuthorityId},
 };
@@ -127,6 +127,14 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			(5, 100),
 		],
 	};
+	let genesis_staking = simple_staking::GenesisConfig::<Test> {
+		invulnerables: vec![
+			1,
+			2,
+			3
+		],
+	};
 	genesis.assimilate_storage(&mut t).unwrap();
+	genesis_staking.assimilate_storage(&mut t).unwrap();
 	t.into()
 }
