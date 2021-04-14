@@ -21,7 +21,7 @@ pub mod pallet {
 	use core::ops::{Div};
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config + authorship::Config {
+	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// The currency mechanism.
@@ -30,9 +30,14 @@ pub mod pallet {
 		type UpdateOrigin: EnsureOrigin<Self::Origin>;
 
 		type TreasuryAddress: Get<Self::AccountId>;
+
+		/// Maximum number of authors that we should have. This is used for benchmarking and is not
+		/// enforced.
+		///
+		/// This does not take into account the invulnerables.
+		type MaxAuthors: Get<u32>;
 	}
 	type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
-
 
 	#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 	pub struct AuthorInfo<AccountId, Balance, BlockNumber> {
@@ -40,7 +45,6 @@ pub mod pallet {
 		pub deposit: Balance,
 		pub last_block: Option<BlockNumber>
 	}
-	pub type AuthorInfoOf<T> = AuthorInfo<<T as SystemConfig>::AccountId, <T as Currency<<T as SystemConfig>::AccountId>>::Balance, <T as frame_system::Config>::BlockNumber>;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -58,8 +62,8 @@ pub mod pallet {
 	pub type Authors<T: Config> = StorageValue<_, Vec<AuthorInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>>, ValueQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn max_authors)]
-	pub type MaxAuthors<T> = StorageValue<_, u32, ValueQuery>;
+	#[pallet::getter(fn allowed_authors)]
+	pub type AllowedAuthors<T> = StorageValue<_, u32, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn author_bond)]
@@ -87,6 +91,10 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			<Invulnerables<T>>::put(&self.invulnerables);
+			assert!(
+				T::MaxAuthors::get() > <AllowedAuthors<T>>::get(),
+				"genesis allowed_authors are more than T::MaxAuthors",
+			);
 		}
 	}
 
@@ -97,7 +105,7 @@ pub mod pallet {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
 		NewInvulnerables(Vec<T::AccountId>),
-		NewMaxAuthorCount(u32),
+		NewAllowedAuthorCount(u32),
 		NewAuthorBond(BalanceOf<T>),
 		AuthorAdded(T::AccountId, BalanceOf<T>),
 		AuthorRemoved(T::AccountId)
@@ -106,7 +114,7 @@ pub mod pallet {
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		MaxAuthors,
+		TooManyAuthors,
 		Unknown,
 		Permission,
 		AlreadyAuthor,
@@ -114,25 +122,13 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_initialize(_: T::BlockNumber) -> Weight {
-			let author = <authorship::Module<T>>::author();
-			let treasury = T::TreasuryAddress::get();
-			let reward = T::Currency::free_balance(&treasury).div(2u32.into());
-			T::Currency::transfer(&treasury, &author, reward, KeepAlive);
-			// TODO double check: weight 3 reads (author, treasury, balance) 1 writes (transfer)
-			T::DbWeight::get().reads_writes(3, 1)
-		}
-		//TODO on init (or finalize) add to aura set at next era
-	}
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
 	// These functions materialize as "extrinsics", which are often compared to transactions.
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
-
 		#[pallet::weight(10_000)]
 		pub fn set_invulnerables(origin: OriginFor<T>, new: Vec<T::AccountId>) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
@@ -142,14 +138,17 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000)]
-		pub fn set_max_author_count(origin: OriginFor<T>, max_authors: u32) -> DispatchResultWithPostInfo {
+		pub fn set_allowed_author_count(origin: OriginFor<T>, allowed: u32) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			<MaxAuthors<T>>::put(&max_authors);
-			Self::deposit_event(Event::NewMaxAuthorCount(max_authors));
+			if allowed > T::MaxAuthors::get() {
+				log::warn!(
+					"allowed > T::MaxAuthors; you might need to run benchmarks again"
+				);
+			}
+			<AllowedAuthors<T>>::put(&allowed);
+			Self::deposit_event(Event::NewAllowedAuthorCount(allowed));
 			Ok(().into())
-
 		}
-
 
 		#[pallet::weight(10_000)]
 		pub fn set_author_bond(origin: OriginFor<T>, author_bond: BalanceOf<T>) -> DispatchResultWithPostInfo {
@@ -157,7 +156,6 @@ pub mod pallet {
 			<AuthorBond<T>>::put(&author_bond);
 			Self::deposit_event(Event::NewAuthorBond(author_bond));
 			Ok(().into())
-
 		}
 
 		#[pallet::weight(10_000)]
@@ -166,7 +164,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			let deposit = <AuthorBond<T>>::get();
 			let length = <Authors<T>>::decode_len().unwrap_or_default();
-			ensure!((length as u32) < MaxAuthors::<T>::get(), Error::<T>::MaxAuthors);
+			ensure!((length as u32) < Self::allowed_authors(), Error::<T>::TooManyAuthors);
 			let new_author = AuthorInfo {
 				who: who.clone(),
 				deposit,
@@ -197,6 +195,24 @@ pub mod pallet {
 			Self::deposit_event(Event::AuthorRemoved(who));
 			Ok(().into())
 
+		}
+	}
+
+	/// Keep track of number of authored blocks per authority, uncles are counted as
+	/// well since they're a valid proof of being online.
+	impl<
+		T: Config + pallet_authorship::Config,
+	> pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>
+	{
+		fn note_author(author: T::AccountId) {
+			let treasury = T::TreasuryAddress::get();
+			let reward = T::Currency::free_balance(&treasury).div(2u32.into());
+			T::Currency::transfer(&treasury, &author, reward, KeepAlive);
+			// frame_system::Pallet::<T>::register_extra_weight_unchecked(T::DbWeight::reads_writes());
+			//Register the extra weight
+		}
+		fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {
+			//TODO can we ignore this?
 		}
 	}
 }

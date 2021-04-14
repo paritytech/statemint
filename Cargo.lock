@@ -4840,6 +4840,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "log",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",

@@ -86,7 +86,7 @@ impl pallet_authorship::Config for Test {
 	type FindAuthor = Author4;
 	type UncleGenerations = ();
 	type FilterUncle = ();
-	type EventHandler = ();
+	type EventHandler = (SimpleStaking);
 }
 
 parameter_types! {
@@ -110,12 +110,14 @@ ord_parameter_types! {
 }
 parameter_types! {
 	pub const TreasuryAddress: u64 = 5;
+	pub const MaxAuthors: u64 = 5;
 }
 impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = EnsureSignedBy<WhitelistedCaller, u64>;
 	type TreasuryAddress = TreasuryAddress;
+	type MaxAuthors = MaxAuthors;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

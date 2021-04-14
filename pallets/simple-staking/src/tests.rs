@@ -83,7 +83,9 @@ fn leave_intent() {
 #[test]
 fn on_init() {
 	new_test_ext().execute_with(|| {
-		SimpleStaking::on_initialize(1);
+		assert_eq!(Balances::free_balance(4), 0);
+		assert_eq!(Balances::free_balance(5), 100);
+		Authorship::on_initialize(1);
 		assert_eq!(Balances::free_balance(4), 50);
 		assert_eq!(Balances::free_balance(5), 50);
 	});
