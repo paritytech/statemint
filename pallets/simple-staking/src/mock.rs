@@ -106,7 +106,7 @@ impl pallet_aura::Config for Test {
 
 
 ord_parameter_types! {
-	pub const Three: u64 = 3;
+	pub const WhitelistedCaller: u64 = 15276289921735352792;
 }
 parameter_types! {
 	pub const TreasuryAddress: u64 = 5;
@@ -114,7 +114,7 @@ parameter_types! {
 impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
-	type UpdateOrigin = EnsureSignedBy<Three, u64>;
+	type UpdateOrigin = EnsureSignedBy<WhitelistedCaller, u64>;
 	type TreasuryAddress = TreasuryAddress;
 }
 
