@@ -1,9 +1,13 @@
 use super::*;
 use crate as simple_staking;
 use sp_core::H256;
-use frame_support::{parameter_types, ord_parameter_types, traits::{FindAuthor, GenesisBuild}};
+use frame_support::{
+	parameter_types, ord_parameter_types,
+	traits::{FindAuthor, GenesisBuild},
+};
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup}, testing::{Header, UintAuthorityId},
+	traits::{BlakeTwo256, IdentityLookup},
+	testing::{Header},
 };
 use sp_consensus_aura::sr25519::AuthorityId;
 use frame_system::{EnsureSignedBy};
@@ -86,7 +90,7 @@ impl pallet_authorship::Config for Test {
 	type FindAuthor = Author4;
 	type UncleGenerations = ();
 	type FilterUncle = ();
-	type EventHandler = (SimpleStaking);
+	type EventHandler = SimpleStaking;
 }
 
 parameter_types! {
@@ -104,20 +108,21 @@ impl pallet_aura::Config for Test {
 	type AuthorityId = AuthorityId;
 }
 
-
 ord_parameter_types! {
-	pub const WhitelistedCaller: u64 = 15276289921735352792;
+	pub const RootAccount: u64 = 777;
 }
 parameter_types! {
 	pub const TreasuryAddress: u64 = 5;
-	pub const MaxAuthors: u64 = 5;
+	pub const MaxAuthors: u32 = 20;
+	pub const MaxInvulenrables: u32 = 20;
 }
 impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
-	type UpdateOrigin = EnsureSignedBy<WhitelistedCaller, u64>;
+	type UpdateOrigin = EnsureSignedBy<RootAccount, u64>;
 	type TreasuryAddress = TreasuryAddress;
 	type MaxAuthors = MaxAuthors;
+	type MaxInvulenrables = MaxInvulenrables;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

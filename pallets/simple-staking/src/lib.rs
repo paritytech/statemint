@@ -8,17 +8,25 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-#[cfg(any(feature = "runtime-benchmarks", test))]
+#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, inherent::Vec, traits::{Currency, ReservableCurrency, EnsureOrigin, ExistenceRequirement::{KeepAlive, AllowDeath}}};
-	use frame_system::{pallet_prelude::*, ensure_root};
+	use frame_support::{
+		dispatch::DispatchResultWithPostInfo,
+		pallet_prelude::*,
+		inherent::Vec,
+		traits::{Currency, ReservableCurrency, EnsureOrigin, ExistenceRequirement::KeepAlive},
+	};
+	use frame_system::pallet_prelude::*;
 	use frame_system::Config as SystemConfig;
-	use frame_support::sp_runtime::{RuntimeDebug};
-	use pallet_authorship as authorship;
-	use core::ops::{Div};
+	use frame_support::{
+		sp_runtime::{RuntimeDebug},
+		weights::DispatchClass,
+	};
+	use core::ops::Div;
+
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -36,14 +44,21 @@ pub mod pallet {
 		///
 		/// This does not take into account the invulnerables.
 		type MaxAuthors: Get<u32>;
+
+		/// Maximum number of invulnerables.
+		///
+		/// Used only for benchmarking.
+		type MaxInvulenrables: Get<u32>;
 	}
-	type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
+
+	type BalanceOf<T> =
+		<<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
 	#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 	pub struct AuthorInfo<AccountId, Balance, BlockNumber> {
 		pub who: AccountId,
 		pub deposit: Balance,
-		pub last_block: Option<BlockNumber>
+		pub last_block: Option<BlockNumber>,
 	}
 
 	#[pallet::pallet]
@@ -90,11 +105,11 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
-			<Invulnerables<T>>::put(&self.invulnerables);
 			assert!(
-				T::MaxAuthors::get() > <AllowedAuthors<T>>::get(),
-				"genesis allowed_authors are more than T::MaxAuthors",
+				T::MaxInvulenrables::get() > (self.invulnerables.len() as u32),
+				"genesis invulnerables are more than T::MaxInvulenrables",
 			);
+			<Invulnerables<T>>::put(&self.invulnerables);
 		}
 	}
 
@@ -130,8 +145,16 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(10_000)]
-		pub fn set_invulnerables(origin: OriginFor<T>, new: Vec<T::AccountId>) -> DispatchResultWithPostInfo {
+		pub fn set_invulnerables(
+			origin: OriginFor<T>,
+			new: Vec<T::AccountId>,
+		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
+			if (new.len() as u32) > T::MaxInvulenrables::get() {
+				log::warn!(
+					"invulnerables > T::MaxInvulenrables; you might need to run benchmarks again"
+				);
+			}
 			<Invulnerables<T>>::put(&new);
 			Self::deposit_event(Event::NewInvulnerables(new));
 			Ok(().into())
@@ -194,22 +217,23 @@ pub mod pallet {
 			})?;
 			Self::deposit_event(Event::AuthorRemoved(who));
 			Ok(().into())
-
 		}
 	}
 
 	/// Keep track of number of authored blocks per authority, uncles are counted as
 	/// well since they're a valid proof of being online.
-	impl<
-		T: Config + pallet_authorship::Config,
-	> pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>
+	impl<T: Config + pallet_authorship::Config>
+		pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>
 	{
 		fn note_author(author: T::AccountId) {
 			let treasury = T::TreasuryAddress::get();
 			let reward = T::Currency::free_balance(&treasury).div(2u32.into());
-			T::Currency::transfer(&treasury, &author, reward, KeepAlive);
-			// frame_system::Pallet::<T>::register_extra_weight_unchecked(T::DbWeight::reads_writes());
-			//Register the extra weight
+
+			// `reward` is half of treasury account, this should never fail.
+			let _success = T::Currency::transfer(&treasury, &author, reward, KeepAlive);
+			debug_assert!(_success.is_ok());
+
+			frame_system::Pallet::<T>::register_extra_weight_unchecked(0, DispatchClass::Mandatory);
 		}
 		fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {
 			//TODO can we ignore this?

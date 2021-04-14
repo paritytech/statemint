@@ -28,7 +28,7 @@ pub mod constants;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::traits::{
-	AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify,
+	AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify, AccountIdConversion,
 };
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -543,6 +543,29 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
 	type AccountIdConverter = LocationConverter;
 }
 
+parameter_types! {
+	pub const TreasuryAddress: u64 = 5;
+	pub const MaxAuthors: u32 = 1000;
+	pub const MaxInvulenrables: u32 = 100;
+}
+
+frame_support::ord_parameter_types! {
+	pub const RelayChainCouncilOrigin: AccountId = <
+		sp_runtime::ModuleId
+		as
+		AccountIdConversion<AccountId>
+	>::into_account(&sp_runtime::ModuleId(*b"TODOTODO"));
+}
+
+impl pallet_simple_staking::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type UpdateOrigin = frame_system::EnsureSignedBy<RelayChainCouncilOrigin, AccountId>;
+	type TreasuryAddress = (); // Needs to be some random inaccessible account. (`ModuleId`)
+	type MaxAuthors = MaxAuthors;
+	type MaxInvulenrables = MaxInvulenrables;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -564,6 +587,7 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
 		Utility: pallet_utility::{Pallet, Call, Event},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
+		SimpleStaking: pallet_simple_staking::{Pallet, Call, Storage, Event<T>, Config<T>},
 	}
 );
 
@@ -701,7 +725,7 @@ impl_runtime_apis! {
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 
-			use frame_system_benchmarking::Module as SystemBench;
+			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
@@ -723,6 +747,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+			add_benchmark!(params, batches, pallet_simple_staking, SimpleStaking);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
