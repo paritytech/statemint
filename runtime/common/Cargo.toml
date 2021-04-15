@@ -74,10 +74,9 @@ git = 'https://github.com/paritytech/polkadot'
 branch = 'rococo-v1'
 default-features = false
 
-[dependencies.pallet-authorship]
+[dependencies.pallet-simple-staking]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+path = '../../pallets/simple-staking'
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -106,10 +105,11 @@ std = [
 	'codec/std',
 	'sp-std/std',
 	'sp-io/std',
+	'sp-runtime/std',
 	'frame-support/std',
 	'frame-executive/std',
 	'frame-system/std',
-	'pallet-authorship/std',
+	'pallet-simple-staking/std',
 	'pallet-balances/std',
 	'node-primitives/std',
 	'polkadot-runtime-common/std',

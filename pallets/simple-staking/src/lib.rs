@@ -18,14 +18,16 @@ pub mod pallet {
 		pallet_prelude::*,
 		inherent::Vec,
 		traits::{Currency, ReservableCurrency, EnsureOrigin, ExistenceRequirement::KeepAlive},
+		PalletId
 	};
 	use frame_system::pallet_prelude::*;
 	use frame_system::Config as SystemConfig;
 	use frame_support::{
-		sp_runtime::{RuntimeDebug},
+		sp_runtime::{RuntimeDebug, traits::{AccountIdConversion}},
 		weights::DispatchClass,
 	};
 	use core::ops::Div;
+
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -37,7 +39,7 @@ pub mod pallet {
 
 		type UpdateOrigin: EnsureOrigin<Self::Origin>;
 
-		type TreasuryAddress: Get<Self::AccountId>;
+		type TreasuryId: Get<PalletId>;
 
 		/// Maximum number of authors that we should have. This is used for benchmarking and is not
 		/// enforced.
@@ -48,7 +50,7 @@ pub mod pallet {
 		/// Maximum number of invulnerables.
 		///
 		/// Used only for benchmarking.
-		type MaxInvulenrables: Get<u32>;
+		type MaxInvulnerables: Get<u32>;
 	}
 
 	type BalanceOf<T> =
@@ -106,8 +108,8 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			assert!(
-				T::MaxInvulenrables::get() > (self.invulnerables.len() as u32),
-				"genesis invulnerables are more than T::MaxInvulenrables",
+				T::MaxInvulnerables::get() > (self.invulnerables.len() as u32),
+				"genesis invulnerables are more than T::MaxInvulnerables",
 			);
 			<Invulnerables<T>>::put(&self.invulnerables);
 		}
@@ -152,7 +154,7 @@ pub mod pallet {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			if (new.len() as u32) > T::MaxInvulnerables::get() {
 				log::warn!(
-					"invulnerables > T::MaxInvulenrables; you might need to run benchmarks again"
+					"invulnerables > T::MaxInvulnerables; you might need to run benchmarks again"
 				);
 			}
 			<Invulnerables<T>>::put(&new);
@@ -220,13 +222,19 @@ pub mod pallet {
 		}
 	}
 
+	impl<T: Config> Pallet<T> {
+		pub fn account_id() -> T::AccountId {
+			T::TreasuryId::get().into_account()
+		}
+	}
+
 	/// Keep track of number of authored blocks per authority, uncles are counted as
 	/// well since they're a valid proof of being online.
 	impl<T: Config + pallet_authorship::Config>
 		pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>
 	{
 		fn note_author(author: T::AccountId) {
-			let treasury = T::TreasuryAddress::get();
+			let treasury = Self::account_id();
 			let reward = T::Currency::free_balance(&treasury).div(2u32.into());
 
 			// `reward` is half of treasury account, this should never fail.

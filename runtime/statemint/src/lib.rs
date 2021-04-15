@@ -70,7 +70,7 @@ pub use frame_support::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
 	},
-	RuntimeDebug, StorageValue,
+	RuntimeDebug, StorageValue, PalletId
 };
 use runtime_common::impls::DealWithFees;
 pub use pallet_balances::Call as BalancesCall;
@@ -612,9 +612,9 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-	pub const TreasuryAddress: u64 = 5;
+	pub const TreasuryId: PalletId = PalletId(*b"Treasury");
 	pub const MaxAuthors: u32 = 1000;
-	pub const MaxInvulenrables: u32 = 100;
+	pub const MaxInvulnerables: u32 = 100;
 }
 
 frame_support::ord_parameter_types! {
@@ -629,9 +629,9 @@ impl pallet_simple_staking::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = frame_system::EnsureSignedBy<RelayChainCouncilOrigin, AccountId>;
-	type TreasuryAddress = (); // Needs to be some random inaccessible account. (`ModuleId`)
+	type TreasuryId = TreasuryId; // Needs to be some random inaccessible account. (`ModuleId`)
 	type MaxAuthors = MaxAuthors;
-	type MaxInvulenrables = MaxInvulenrables;
+	type MaxInvulnerables = MaxInvulnerables;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

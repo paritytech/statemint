@@ -4,6 +4,7 @@ use sp_core::H256;
 use frame_support::{
 	parameter_types, ord_parameter_types,
 	traits::{FindAuthor, GenesisBuild},
+	PalletId
 };
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
@@ -112,17 +113,17 @@ ord_parameter_types! {
 	pub const RootAccount: u64 = 777;
 }
 parameter_types! {
-	pub const TreasuryAddress: u64 = 5;
+	pub const TreasuryId: PalletId = PalletId(*b"Treasury");
 	pub const MaxAuthors: u32 = 20;
-	pub const MaxInvulenrables: u32 = 20;
+	pub const MaxInvulnerables: u32 = 20;
 }
 impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = EnsureSignedBy<RootAccount, u64>;
-	type TreasuryAddress = TreasuryAddress;
+	type TreasuryId = TreasuryId;
 	type MaxAuthors = MaxAuthors;
-	type MaxInvulenrables = MaxInvulenrables;
+	type MaxInvulnerables = MaxInvulnerables;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -131,7 +132,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		balances: vec![
 			(1, 100),
 			(2, 200),
-			(5, 100),
 		],
 	};
 	let genesis_staking = simple_staking::GenesisConfig::<Test> {

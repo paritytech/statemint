@@ -1,5 +1,5 @@
 use crate::{mock::*, Error, AuthorInfo};
-use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
+use frame_support::{assert_noop, assert_ok, traits::{OnInitialize, Currency}};
 use sp_runtime::traits::BadOrigin;
 use pallet_balances::Error as BalancesError;
 
@@ -92,11 +92,12 @@ fn leave_intent() {
 #[test]
 fn on_init() {
 	new_test_ext().execute_with(|| {
+		Balances::make_free_balance_be(&SimpleStaking::account_id(), 100);
 		assert_eq!(Balances::free_balance(4), 0);
-		assert_eq!(Balances::free_balance(5), 100);
+		assert_eq!(Balances::free_balance(SimpleStaking::account_id()), 100);
 		Authorship::on_initialize(1);
 		assert_eq!(Balances::free_balance(4), 50);
-		assert_eq!(Balances::free_balance(5), 50);
+		assert_eq!(Balances::free_balance(SimpleStaking::account_id()), 50);
 	});
 }
 

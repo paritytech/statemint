@@ -24,20 +24,20 @@ pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<<T as fr
 pub struct ToAuthor<R>(sp_std::marker::PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for ToAuthor<R>
 where
-	R: pallet_balances::Config + pallet_authorship::Config,
+	R: pallet_balances::Config + pallet_simple_staking::Config,
 	<R as frame_system::Config>::AccountId: From<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::AccountId: Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
 		let numeric_amount = amount.peek();
-		let author = <pallet_authorship::Module<R>>::author();
+		let treasury = <pallet_simple_staking::Pallet<R>>::account_id();
 		<pallet_balances::Pallet<R>>::resolve_creating(
-			&<pallet_authorship::Module<R>>::author(),
+			&treasury,
 			amount,
 		);
 		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit(
-			author,
+			treasury,
 			numeric_amount,
 		));
 	}
@@ -46,7 +46,7 @@ where
 pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
 where
-	R: pallet_balances::Config + pallet_authorship::Config,
+	R: pallet_balances::Config + pallet_simple_staking::Config,
 	<R as frame_system::Config>::AccountId: From<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::AccountId: Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
