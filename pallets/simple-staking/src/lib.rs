@@ -150,7 +150,7 @@ pub mod pallet {
 			new: Vec<T::AccountId>,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			if (new.len() as u32) > T::MaxInvulenrables::get() {
+			if (new.len() as u32) > T::MaxInvulnerables::get() {
 				log::warn!(
 					"invulnerables > T::MaxInvulenrables; you might need to run benchmarks again"
 				);
