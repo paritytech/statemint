@@ -16,8 +16,8 @@
 pub mod currency {
 	use node_primitives::Balance;
 
-	pub const DOTS: Balance = 1_000_000_000_000;
-	pub const DOLLARS: Balance = DOTS / 6;
+	pub const KSM: Balance = 1_000_000_000_000;
+	pub const DOLLARS: Balance = KSM / 300;
 	pub const CENTS: Balance = DOLLARS / 100;
 	pub const MILLICENTS: Balance = CENTS / 1_000;
 
