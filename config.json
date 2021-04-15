@@ -23,6 +23,7 @@
 	"parachains": [
 		{
 			"bin": "./target/release/statemint",
+			"chain": "statemint-local",
 			"id": "200",
 			"wsPort": 9988,
 			"port": 31200,
@@ -31,6 +32,7 @@
 		},
 		{
 			"bin": "./target/release/statemint",
+			"chain": "statemint-local",
 			"id": "300",
 			"wsPort": 9999,
 			"port": 31300,
