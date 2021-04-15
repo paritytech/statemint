@@ -17,13 +17,13 @@ pub mod currency {
 	use node_primitives::Balance;
 
 	pub const OLDDOT: Balance = 1_000_000_000_000;
-	pub const NEWDOT: Balance = OLDDOT / 100; // 10_000_000_000
-	pub const CENTS: Balance = NEWDOT / 100; // 100_000_000
+	pub const DOT: Balance = OLDDOT / 100; // 10_000_000_000
+	pub const CENTS: Balance = DOT / 100; // 100_000_000
 	pub const MILLICENTS: Balance = CENTS / 1_000; // 100_000
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
 		// 1/10 of Polkadot v29
-		items as Balance * 2 * NEWDOT + (bytes as Balance) * 10 * MILLICENTS
+		items as Balance * 2 * DOT + (bytes as Balance) * 10 * MILLICENTS
 	}
 }
 
