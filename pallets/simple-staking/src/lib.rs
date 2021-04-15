@@ -108,7 +108,7 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			assert!(
-				T::MaxInvulnerables::get() > (self.invulnerables.len() as u32),
+				T::MaxInvulnerables::get() >= (self.invulnerables.len() as u32),
 				"genesis invulnerables are more than T::MaxInvulnerables",
 			);
 			<Invulnerables<T>>::put(&self.invulnerables);
@@ -152,6 +152,7 @@ pub mod pallet {
 			new: Vec<T::AccountId>,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
+			// we trust origin calls, this is just a for more accurate benchmarking
 			if (new.len() as u32) > T::MaxInvulnerables::get() {
 				log::warn!(
 					"invulnerables > T::MaxInvulnerables; you might need to run benchmarks again"
@@ -165,6 +166,7 @@ pub mod pallet {
 		#[pallet::weight(10_000)]
 		pub fn set_allowed_author_count(origin: OriginFor<T>, allowed: u32) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
+			// we trust origin calls, this is just a for more accurate benchmarking
 			if allowed > T::MaxAuthors::get() {
 				log::warn!(
 					"allowed > T::MaxAuthors; you might need to run benchmarks again"
