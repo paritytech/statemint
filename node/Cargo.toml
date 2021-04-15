@@ -208,10 +208,6 @@ branch = 'rococo-v1'
 git = "https://github.com/paritytech/polkadot"
 branch = 'rococo-v1'
 
-[dependencies.polkadot-test-service]
-git = "https://github.com/paritytech/polkadot"
-branch = 'rococo-v1'
-
 [dependencies.polkadot-parachain]
 git = "https://github.com/paritytech/polkadot"
 branch = 'rococo-v1'

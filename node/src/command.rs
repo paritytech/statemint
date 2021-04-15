@@ -42,9 +42,13 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"dev" => Box::new(chain_spec::development_config(para_id)),
-		"statemine_dev" => Box::new(chain_spec::statemine_development_config(para_id)),
-		"" | "local" => Box::new(chain_spec::local_testnet_config(para_id)),
+		"statemint-dev" => Box::new(chain_spec::statemint_development_config(para_id)),
+		"statemint-local" => Box::new(chain_spec::statemint_local_config(1.into())),
+		"statemint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+			&include_bytes!("../specs/statemint.json")[..],
+		)?),
+		"statemine-dev" => Box::new(chain_spec::statemine_development_config(para_id)),
+		"statemine-local" => Box::new(chain_spec::statemine_local_config(para_id)),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(
 			std::path::PathBuf::from(path),
 		)?),
@@ -217,7 +221,7 @@ pub fn run() -> Result<()> {
 
 			let block: Block = generate_genesis_block(&load_spec(
 				&params.chain.clone().unwrap_or_default(),
-				params.parachain_id.into(),
+				params.parachain_id.unwrap_or(200).into(),
 			)?)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
