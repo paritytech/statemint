@@ -48,7 +48,7 @@ benchmarks! {
 	where_clause { where T: pallet_authorship::Config }
 
 	set_invulnerables {
-		let b in 1 .. T::MaxInvulenrables::get();
+		let b in 1 .. T::MaxInvulnerables::get();
 		let new_invulnerables = (0..b).map(|c| account("author", c, SEED)).collect::<Vec<_>>();
 		let origin = T::UpdateOrigin::successful_origin();
 		// whitelist!(RootAccount); // TODO
