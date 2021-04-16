@@ -124,6 +124,7 @@ impl Config for Test {
 	type TreasuryId = TreasuryId;
 	type MaxAuthors = MaxAuthors;
 	type MaxInvulnerables = MaxInvulnerables;
+	type WeightInfo = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

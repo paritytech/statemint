@@ -121,7 +121,7 @@ benchmarks! {
 	// worse case is paying a non-existing author account.
 	note_author {
 		T::Currency::make_free_balance_be(
-			&T::TreasuryAddress::get(),
+			&<SimpleStaking<T>>::account_id(),
 			T::Currency::minimum_balance() * 2u32.into(),
 		);
 		let author = account("author", 0, SEED);

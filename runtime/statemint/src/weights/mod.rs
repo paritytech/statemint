@@ -1,0 +1,1 @@
+pub mod pallet_simple_staking;

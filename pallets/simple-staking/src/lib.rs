@@ -51,7 +51,37 @@ pub mod pallet {
 		///
 		/// Used only for benchmarking.
 		type MaxInvulnerables: Get<u32>;
+
+		type WeightInfo: WeightInfo;
 	}
+
+	// The weight info trait for `pallet_escrow`.
+pub trait WeightInfo {
+	fn set_invulnerables(_b: u32) -> Weight;
+	fn set_allowed_author_count() -> Weight;
+	fn set_author_bond() -> Weight;
+	fn register_as_author(_c: u32) -> Weight;
+	fn leave_intent(_c: u32) -> Weight;
+}
+
+// default weights for tests
+impl WeightInfo for () {
+	fn set_invulnerables(_b: u32) -> Weight {
+		0
+	}
+	fn set_allowed_author_count() -> Weight {
+		0
+	}
+	fn set_author_bond() -> Weight {
+		0
+	}
+	fn register_as_author(_c: u32) -> Weight {
+		0
+	}
+	fn leave_intent(_c: u32) -> Weight {
+		0
+	}
+}
 
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -139,7 +169,10 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		//TODO add in on init hook to concat invulnerables with Authors and set as aura authorities
+		// Also consider implementing era's of X block
+	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
 	// These functions materialize as "extrinsics", which are often compared to transactions.
@@ -185,7 +218,16 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		// 1. worse case
+		// #[pallet::weight(T::WeightInfo::register_as_author(T::MaxAuthors::get()))]
+		// 2. accurate, provided by user, checked by chain
+		// #[pallet::weight(T::WeightInfo::register_as_author(authors_count))]
+		// pub fn register_as_author(origin: OriginFor<T>, authors_count: u32) -> DispatchResultWithPostInfo {}
+		// 3. refund
+		// #[pallet::weight(T::WeightInfo::register_as_author(T::MaxAuthors::get()))]
+		// in case of successful transaction, return `Ok(Some(refund).into())`
+
+		#[pallet::weight(1000)]
 		pub fn register_as_author(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			// lock deposit to start or require min?
 			let who = ensure_signed(origin)?;
@@ -243,7 +285,11 @@ pub mod pallet {
 			let _success = T::Currency::transfer(&treasury, &author, reward, KeepAlive);
 			debug_assert!(_success.is_ok());
 
-			frame_system::Pallet::<T>::register_extra_weight_unchecked(0, DispatchClass::Mandatory);
+			frame_system::Pallet::<T>::register_extra_weight_unchecked(
+				// T::WeightInfo::note_author(),
+				0,
+				DispatchClass::Mandatory,
+			);
 		}
 		fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {
 			//TODO can we ignore this?

@@ -61,12 +61,10 @@ default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 
-
 [dependencies.polkadot-runtime-common]
 git = 'https://github.com/paritytech/polkadot'
 branch = 'rococo-v1'
 default-features = false
-
 
 # Polkadot dependencies
 [dependencies.polkadot-primitives]
@@ -105,7 +103,6 @@ std = [
 	'codec/std',
 	'sp-std/std',
 	'sp-io/std',
-	'sp-runtime/std',
 	'frame-support/std',
 	'frame-executive/std',
 	'frame-system/std',

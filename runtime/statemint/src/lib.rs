@@ -632,6 +632,7 @@ impl pallet_simple_staking::Config for Runtime {
 	type TreasuryId = TreasuryId; // Needs to be some random inaccessible account. (`ModuleId`)
 	type MaxAuthors = MaxAuthors;
 	type MaxInvulnerables = MaxInvulnerables;
+	type WeightInfo = ();
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -817,8 +818,14 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_balances, Balances);
-			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+
+			//TODO we should re run all benchmarks for used pallets together
+			// add_benchmark!(params, batches, pallet_assets, Assets);
+			// add_benchmark!(params, batches, pallet_balances, Balances);
+			// add_benchmark!(params, batches, pallet_multisig, Multisig);
+			// add_benchmark!(params, batches, pallet_proxy, Proxy);
+			// add_benchmark!(params, batches, pallet_utility, Utility);
+			// add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_simple_staking, SimpleStaking);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
