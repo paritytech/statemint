@@ -62,6 +62,7 @@ pub trait WeightInfo {
 	fn set_author_bond() -> Weight;
 	fn register_as_author(_c: u32) -> Weight;
 	fn leave_intent(_c: u32) -> Weight;
+	fn note_author() -> Weight;
 }
 
 // default weights for tests
@@ -79,6 +80,9 @@ impl WeightInfo for () {
 		0
 	}
 	fn leave_intent(_c: u32) -> Weight {
+		0
+	}
+	fn note_author() -> Weight {
 		0
 	}
 }
@@ -179,7 +183,8 @@ impl WeightInfo for () {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000)]
+
+		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
 		pub fn set_invulnerables(
 			origin: OriginFor<T>,
 			new: Vec<T::AccountId>,
@@ -196,7 +201,7 @@ impl WeightInfo for () {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::set_allowed_author_count())]
 		pub fn set_allowed_author_count(origin: OriginFor<T>, allowed: u32) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			// we trust origin calls, this is just a for more accurate benchmarking
@@ -210,7 +215,7 @@ impl WeightInfo for () {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::set_author_bond())]
 		pub fn set_author_bond(origin: OriginFor<T>, author_bond: BalanceOf<T>) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			<AuthorBond<T>>::put(&author_bond);
@@ -227,7 +232,7 @@ impl WeightInfo for () {
 		// #[pallet::weight(T::WeightInfo::register_as_author(T::MaxAuthors::get()))]
 		// in case of successful transaction, return `Ok(Some(refund).into())`
 
-		#[pallet::weight(1000)]
+		#[pallet::weight(T::WeightInfo::register_as_author(T::MaxAuthors::get()))]
 		pub fn register_as_author(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			// lock deposit to start or require min?
 			let who = ensure_signed(origin)?;
@@ -239,30 +244,30 @@ impl WeightInfo for () {
 				deposit,
 				last_block: None
 			};
-			<Authors<T>>::try_mutate(|authors| -> DispatchResult {
-				if authors.into_iter().any(|author| author.who == who) {
-					Err(Error::<T>::AlreadyAuthor)?
-				} else {
-					T::Currency::reserve(&who, deposit)?;
-					authors.push(new_author);
-					Self::deposit_event(Event::AuthorAdded(who, deposit));
-					Ok(())
-				}
-			})?;
-			Ok(().into())
+			let author_count = <Authors<T>>::try_mutate(|authors| -> Result<usize, DispatchError> {
+									if authors.into_iter().any(|author| author.who == who) {
+										Err(Error::<T>::AlreadyAuthor)?
+									} else {
+										T::Currency::reserve(&who, deposit)?;
+										authors.push(new_author);
+										Self::deposit_event(Event::AuthorAdded(who, deposit));
+										Ok(authors.len())
+									}
+								})?;
+			Ok(Some(T::WeightInfo::register_as_author(author_count as u32)).into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxAuthors::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			<Authors<T>>::try_mutate(|authors| -> DispatchResult {
-				let index = authors.iter().position(|author| author.who == who).ok_or(Error::<T>::NotAuthor)?;
-				T::Currency::unreserve(&who, authors[index].deposit);
-				authors.remove(index);
-				Ok(())
-			})?;
+			let author_count = <Authors<T>>::try_mutate(|authors| -> Result<usize, DispatchError> {
+									let index = authors.iter().position(|author| author.who == who).ok_or(Error::<T>::NotAuthor)?;
+									T::Currency::unreserve(&who, authors[index].deposit);
+									authors.remove(index);
+									Ok(authors.len())
+								})?;
 			Self::deposit_event(Event::AuthorRemoved(who));
-			Ok(().into())
+			Ok(Some(T::WeightInfo::leave_intent(author_count as u32)).into())
 		}
 	}
 
@@ -286,8 +291,7 @@ impl WeightInfo for () {
 			debug_assert!(_success.is_ok());
 
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
-				// T::WeightInfo::note_author(),
-				0,
+				T::WeightInfo::note_author(),
 				DispatchClass::Mandatory,
 			);
 		}

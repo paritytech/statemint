@@ -128,7 +128,7 @@ pub mod opaque {
 	}
 }
 
-// mod weights;
+mod weights;
 
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
@@ -634,7 +634,7 @@ impl pallet_simple_staking::Config for Runtime {
 	type TreasuryId = TreasuryId; // Needs to be some random inaccessible account. (`ModuleId`)
 	type MaxAuthors = MaxAuthors;
 	type MaxInvulnerables = MaxInvulnerables;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_simple_staking::WeightInfo<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
