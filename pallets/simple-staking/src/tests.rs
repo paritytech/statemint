@@ -90,7 +90,7 @@ fn leave_intent() {
 }
 
 #[test]
-fn on_init() {
+fn authorship_event_handler() {
 	new_test_ext().execute_with(|| {
 		Balances::make_free_balance_be(&SimpleStaking::account_id(), 100);
 		// 4 is the default author. 
