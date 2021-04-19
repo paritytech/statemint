@@ -139,7 +139,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		invulnerables: vec![
 			1,
 			2,
-			3
+			3,
 		],
 	};
 	genesis.assimilate_storage(&mut t).unwrap();
