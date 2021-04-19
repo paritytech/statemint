@@ -25,6 +25,7 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -42,6 +43,7 @@ pub mod pallet {
 		weights::DispatchClass,
 	};
 	use core::ops::Div;
+	pub use crate::weights::WeightInfo;
 
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -72,38 +74,6 @@ pub mod pallet {
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
 	}
-
-	// The weight info trait for `pallet_escrow`.
-pub trait WeightInfo {
-	fn set_invulnerables(_b: u32) -> Weight;
-	fn set_allowed_author_count() -> Weight;
-	fn set_author_bond() -> Weight;
-	fn register_as_author(_c: u32) -> Weight;
-	fn leave_intent(_c: u32) -> Weight;
-	fn note_author() -> Weight;
-}
-
-// default weights for tests
-impl WeightInfo for () {
-	fn set_invulnerables(_b: u32) -> Weight {
-		0
-	}
-	fn set_allowed_author_count() -> Weight {
-		0
-	}
-	fn set_author_bond() -> Weight {
-		0
-	}
-	fn register_as_author(_c: u32) -> Weight {
-		0
-	}
-	fn leave_intent(_c: u32) -> Weight {
-		0
-	}
-	fn note_author() -> Weight {
-		0
-	}
-}
 
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
