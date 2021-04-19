@@ -45,15 +45,15 @@ where
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
-pub fn statemint_development_config(id: ParaId) -> StatemineChainSpec {
-	StatemineChainSpec::from_genesis(
+pub fn statemint_development_config(id: ParaId) -> ChainSpec {
+	ChainSpec::from_genesis(
 		// Name
-		"Statemine_Development",
+		"Statemint_Development",
 		// ID
-		"statemine_dev",
+		"statemint_dev",
 		ChainType::Local,
 		move || {
-			statemine_testnet_genesis(
+			statemint_testnet_genesis(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
