@@ -51,7 +51,6 @@ benchmarks! {
 		let b in 1 .. T::MaxInvulnerables::get();
 		let new_invulnerables = (0..b).map(|c| account("author", c, SEED)).collect::<Vec<_>>();
 		let origin = T::UpdateOrigin::successful_origin();
-		// whitelist!(RootAccount); // TODO
 	}: {
 		assert_ok!(
 			<SimpleStaking<T>>::set_invulnerables(origin, new_invulnerables.clone())
