@@ -22,8 +22,8 @@ const SEED: u32 = 0;
 macro_rules! whitelist {
 	($acc:ident) => {
 		frame_benchmarking::benchmarking::add_to_whitelist(
-					frame_system::Account::<T>::hashed_key_for(&$acc).into()
-				);
+			frame_system::Account::<T>::hashed_key_for(&$acc).into()
+		);
 	};
 }
 
