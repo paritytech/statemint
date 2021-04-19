@@ -394,8 +394,7 @@ pub enum ProxyType {
 	/// Asset manager. Can execute calls related to asset management.
 	AssetManager,
 	// Staking proxy. Can execute calls related to collator staking.
-	// TODO: Add when complete: https://github.com/paritytech/statemint/issues/9
-	// Staking,
+	Staking,
 }
 impl Default for ProxyType {
 	fn default() -> Self {
@@ -446,6 +445,11 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Utility(..)
 					| Call::Multisig(..)
 			),
+			ProxyType::Staking => matches!(c,
+				Call::SimpleStaking(..) |
+				Call::Utility(..) |
+				Call::Multisig(..)
+			)
 		}
 	}
 	fn is_superset(&self, o: &Self) -> bool {
@@ -453,6 +457,8 @@ impl InstanceFilter<Call> for ProxyType {
 			(x, y) if x == y => true,
 			(ProxyType::Any, _) => true,
 			(_, ProxyType::Any) => false,
+			(ProxyType::Assets, ProxyType::AssetOwner) => true,
+			(ProxyType::Assets, ProxyType::AssetManager) => true,
 			_ => false,
 		}
 	}
