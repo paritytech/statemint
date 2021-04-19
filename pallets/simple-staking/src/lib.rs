@@ -225,15 +225,6 @@ impl WeightInfo for () {
 			Ok(().into())
 		}
 
-		// 1. worse case
-		// #[pallet::weight(T::WeightInfo::register_as_author(T::MaxAuthors::get()))]
-		// 2. accurate, provided by user, checked by chain
-		// #[pallet::weight(T::WeightInfo::register_as_author(authors_count))]
-		// pub fn register_as_author(origin: OriginFor<T>, authors_count: u32) -> DispatchResultWithPostInfo {}
-		// 3. refund
-		// #[pallet::weight(T::WeightInfo::register_as_author(T::MaxAuthors::get()))]
-		// in case of successful transaction, return `Ok(Some(refund).into())`
-
 		#[pallet::weight(T::WeightInfo::register_as_author(T::MaxAuthors::get()))]
 		pub fn register_as_author(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			// lock deposit to start or require min?
