@@ -288,6 +288,7 @@ impl WeightInfo for () {
 				DispatchClass::Mandatory,
 			);
 		}
+		
 		fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {
 			//TODO can we ignore this?
 		}
