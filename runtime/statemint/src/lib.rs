@@ -395,8 +395,7 @@ pub enum ProxyType {
 	/// Asset manager. Can execute calls related to asset management.
 	AssetManager,
 	// Staking proxy. Can execute calls related to collator staking.
-	// TODO: Add when complete: https://github.com/paritytech/statemint/issues/9
-	// Staking,
+	Staking,
 }
 impl Default for ProxyType {
 	fn default() -> Self {
@@ -407,46 +406,47 @@ impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer => !matches!(
-				c,
-				Call::Balances(..)
-					| Call::Assets(pallet_assets::Call::transfer(..))
-					| Call::Assets(pallet_assets::Call::transfer_keep_alive(..))
-					| Call::Assets(pallet_assets::Call::force_transfer(..))
-					| Call::Assets(pallet_assets::Call::approve_transfer(..))
-					| Call::Assets(pallet_assets::Call::transfer_approved(..))
+			ProxyType::NonTransfer => !matches!(c,
+				Call::Balances(..) |
+				Call::Assets(pallet_assets::Call::transfer(..)) |
+				Call::Assets(pallet_assets::Call::transfer_keep_alive(..)) |
+				Call::Assets(pallet_assets::Call::force_transfer(..)) |
+				Call::Assets(pallet_assets::Call::approve_transfer(..)) |
+				Call::Assets(pallet_assets::Call::transfer_approved(..))
 			),
-			ProxyType::CancelProxy => matches!(
-				c,
-				Call::Proxy(pallet_proxy::Call::reject_announcement(..))
-					| Call::Utility(..)
-					| Call::Multisig(..)
+			ProxyType::CancelProxy => matches!(c,
+				Call::Proxy(pallet_proxy::Call::reject_announcement(..)) |
+				Call::Utility(..) |
+				Call::Multisig(..)
 			),
 			ProxyType::Assets => {
 				matches!(c, Call::Assets(..) | Call::Utility(..) | Call::Multisig(..))
 			}
-			ProxyType::AssetOwner => matches!(
-				c,
-				Call::Assets(pallet_assets::Call::create(..))
-					| Call::Assets(pallet_assets::Call::destroy(..))
-					| Call::Assets(pallet_assets::Call::transfer_ownership(..))
-					| Call::Assets(pallet_assets::Call::set_team(..))
-					| Call::Assets(pallet_assets::Call::set_metadata(..))
-					| Call::Assets(pallet_assets::Call::clear_metadata(..))
-					| Call::Utility(..)
-					| Call::Multisig(..)
+			ProxyType::AssetOwner => matches!(c,
+				Call::Assets(pallet_assets::Call::create(..)) |
+				Call::Assets(pallet_assets::Call::destroy(..)) |
+				Call::Assets(pallet_assets::Call::transfer_ownership(..)) |
+				Call::Assets(pallet_assets::Call::set_team(..)) |
+				Call::Assets(pallet_assets::Call::set_metadata(..)) |
+				Call::Assets(pallet_assets::Call::clear_metadata(..)) |
+				Call::Utility(..) |
+				Call::Multisig(..)
 			),
-			ProxyType::AssetManager => matches!(
-				c,
-				Call::Assets(pallet_assets::Call::mint(..))
-					| Call::Assets(pallet_assets::Call::burn(..))
-					| Call::Assets(pallet_assets::Call::freeze(..))
-					| Call::Assets(pallet_assets::Call::thaw(..))
-					| Call::Assets(pallet_assets::Call::freeze_asset(..))
-					| Call::Assets(pallet_assets::Call::thaw_asset(..))
-					| Call::Utility(..)
-					| Call::Multisig(..)
+			ProxyType::AssetManager => matches!(c,
+				Call::Assets(pallet_assets::Call::mint(..)) |
+				Call::Assets(pallet_assets::Call::burn(..)) |
+				Call::Assets(pallet_assets::Call::freeze(..)) |
+				Call::Assets(pallet_assets::Call::thaw(..)) |
+				Call::Assets(pallet_assets::Call::freeze_asset(..)) |
+				Call::Assets(pallet_assets::Call::thaw_asset(..)) |
+				Call::Utility(..) |
+				Call::Multisig(..)
 			),
+			ProxyType::Staking => matches!(c,
+				Call::SimpleStaking(..) |
+				Call::Utility(..) |
+				Call::Multisig(..)
+			)
 		}
 	}
 	fn is_superset(&self, o: &Self) -> bool {
@@ -454,6 +454,8 @@ impl InstanceFilter<Call> for ProxyType {
 			(x, y) if x == y => true,
 			(ProxyType::Any, _) => true,
 			(_, ProxyType::Any) => false,
+			(ProxyType::Assets, ProxyType::AssetOwner) => true,
+			(ProxyType::Assets, ProxyType::AssetManager) => true,
 			_ => false,
 		}
 	}
