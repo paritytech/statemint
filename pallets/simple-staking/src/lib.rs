@@ -36,12 +36,12 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
-		
+
 		/// Origin that can dictate updating parameters of this pallet.
 		type UpdateOrigin: EnsureOrigin<Self::Origin>;
 
-		/// Account Identifier using which the internal treasury account is generated. 
-		type TreasuryId: Get<PalletId>;
+		/// Account Identifier using which the internal treasury account is generated.
+		type PotId: Get<PalletId>;
 
 		/// Maximum number of authors that we should have. This is used for benchmarking and is not
 		/// enforced.
@@ -54,7 +54,7 @@ pub mod pallet {
 		/// Used only for benchmarking.
 		type MaxInvulnerables: Get<u32>;
 
-		/// The weight information of this pallet. 
+		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
 	}
 
@@ -254,11 +254,11 @@ impl WeightInfo for () {
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			let author_count = <Authors<T>>::try_mutate(|authors| -> Result<usize, DispatchError> {
-									let index = authors.iter().position(|author| author.who == who).ok_or(Error::<T>::NotAuthor)?;
-									T::Currency::unreserve(&who, authors[index].deposit);
-									authors.remove(index);
-									Ok(authors.len())
-								})?;
+				let index = authors.iter().position(|author| author.who == who).ok_or(Error::<T>::NotAuthor)?;
+				T::Currency::unreserve(&who, authors[index].deposit);
+				authors.remove(index);
+				Ok(authors.len())
+			})?;
 			Self::deposit_event(Event::AuthorRemoved(who));
 			Ok(Some(T::WeightInfo::leave_intent(author_count as u32)).into())
 		}
@@ -266,7 +266,7 @@ impl WeightInfo for () {
 
 	impl<T: Config> Pallet<T> {
 		pub fn account_id() -> T::AccountId {
-			T::TreasuryId::get().into_account()
+			T::PotId::get().into_account()
 		}
 	}
 
@@ -288,7 +288,7 @@ impl WeightInfo for () {
 				DispatchClass::Mandatory,
 			);
 		}
-		
+
 		fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {
 			//TODO can we ignore this?
 		}

@@ -614,7 +614,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-	pub const TreasuryId: PalletId = PalletId(*b"Treasury");
+	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxAuthors: u32 = 1000;
 	pub const MaxInvulnerables: u32 = 100;
 }
@@ -631,7 +631,7 @@ impl pallet_simple_staking::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = frame_system::EnsureSignedBy<RelayChainCouncilOrigin, AccountId>;
-	type TreasuryId = TreasuryId; // Needs to be some random inaccessible account. (`ModuleId`)
+	type PotId = PotId;
 	type MaxAuthors = MaxAuthors;
 	type MaxInvulnerables = MaxInvulnerables;
 	type WeightInfo = weights::pallet_simple_staking::WeightInfo<Runtime>;

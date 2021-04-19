@@ -113,7 +113,7 @@ ord_parameter_types! {
 	pub const RootAccount: u64 = 777;
 }
 parameter_types! {
-	pub const TreasuryId: PalletId = PalletId(*b"Treasury");
+	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxAuthors: u32 = 20;
 	pub const MaxInvulnerables: u32 = 20;
 }
@@ -121,7 +121,7 @@ impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = EnsureSignedBy<RootAccount, u64>;
-	type TreasuryId = TreasuryId;
+	type PotId = PotId;
 	type MaxAuthors = MaxAuthors;
 	type MaxInvulnerables = MaxInvulnerables;
 	type WeightInfo = ();

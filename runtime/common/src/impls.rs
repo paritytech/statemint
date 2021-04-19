@@ -156,7 +156,7 @@ mod tests {
 
 
 	parameter_types! {
-		pub const TreasuryId: PalletId = PalletId(*b"Treasury");
+		pub const PotId: PalletId = PalletId(*b"PotStake");
 		pub const MaxAuthors: u32 = 20;
 		pub const MaxInvulnerables: u32 = 20;
 	}
@@ -164,7 +164,7 @@ mod tests {
 		type Event = Event;
 		type Currency = Balances;
 		type UpdateOrigin = EnsureRoot<AccountId>;
-		type TreasuryId = TreasuryId;
+		type PotId = PotId;
 		type MaxAuthors = MaxAuthors;
 		type MaxInvulnerables = MaxInvulnerables;
 		type WeightInfo = ();
