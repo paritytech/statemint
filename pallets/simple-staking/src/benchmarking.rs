@@ -75,7 +75,6 @@ benchmarks! {
 	set_author_bond {
 		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 10u32.into();
 		let origin = T::UpdateOrigin::successful_origin();
-		// whitelist!(caller);
 	}: {
 		assert_ok!(
 			<SimpleStaking<T>>::set_author_bond(origin, bond.clone())
