@@ -79,6 +79,7 @@ fn leave_intent() {
 		assert_ok!(SimpleStaking::set_allowed_author_count(Origin::signed(RootAccount::get()), 1));
 		assert_ok!(SimpleStaking::set_author_bond(Origin::signed(RootAccount::get()), 10));
 		assert_ok!(SimpleStaking::register_as_author(Origin::signed(1)));
+		assert_eq!(Balances::free_balance(1), 90);
 		assert_noop!(
 			SimpleStaking::leave_intent(Origin::signed(RootAccount::get())),
 			Error::<Test>::NotAuthor
