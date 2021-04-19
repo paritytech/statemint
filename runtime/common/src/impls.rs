@@ -69,8 +69,8 @@ where
 mod tests {
 	use super::*;
 	use frame_support::traits::FindAuthor;
-	use frame_support::{parameter_types, weights::DispatchClass};
-	use frame_system::limits;
+	use frame_support::{parameter_types, weights::DispatchClass, PalletId};
+	use frame_system::{limits, EnsureRoot};
 	use polkadot_primitives::v1::AccountId;
 	use sp_core::H256;
 	use sp_runtime::{
@@ -90,6 +90,7 @@ mod tests {
 		{
 			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+			SimpleStaking: pallet_simple_staking::{Pallet, Call, Storage, Event<T>},
 		}
 	);
 
@@ -152,6 +153,23 @@ mod tests {
 			Some(Default::default())
 		}
 	}
+
+
+	parameter_types! {
+		pub const TreasuryId: PalletId = PalletId(*b"Treasury");
+		pub const MaxAuthors: u32 = 20;
+		pub const MaxInvulnerables: u32 = 20;
+	}
+	impl pallet_simple_staking::Config for Test {
+		type Event = Event;
+		type Currency = Balances;
+		type UpdateOrigin = EnsureRoot<AccountId>;
+		type TreasuryId = TreasuryId;
+		type MaxAuthors = MaxAuthors;
+		type MaxInvulnerables = MaxInvulnerables;
+		type WeightInfo = ();
+	}
+
 	impl pallet_authorship::Config for Test {
 		type FindAuthor = OneAuthor;
 		type UncleGenerations = ();
@@ -181,7 +199,7 @@ mod tests {
 			DealWithFees::on_unbalanceds(vec![fee, tip].into_iter());
 
 			// Author gets 100% of tip and 100% of fee = 30
-			assert_eq!(Balances::free_balance(AccountId::default()), 30);
+			assert_eq!(Balances::free_balance(SimpleStaking::account_id()), 30);
 		});
 	}
 }

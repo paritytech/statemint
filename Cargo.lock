@@ -7194,6 +7194,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "node-primitives",
+ "pallet-authorship",
  "pallet-balances",
  "pallet-simple-staking",
  "parity-scale-codec",
