@@ -47,29 +47,39 @@ fn register_as_author() {
 
 		assert_ok!(SimpleStaking::set_author_bond(Origin::signed(RootAccount::get()), 10));
 		assert_ok!(SimpleStaking::set_allowed_author_count(Origin::signed(RootAccount::get()), 1));
+		
+		// can add 1 new 
 		assert_ok!(SimpleStaking::register_as_author(Origin::signed(1)));
-
 		let addition = AuthorInfo {
 			who: 1,
 			deposit: 10,
 			last_block: None
 		};
+		assert_eq!(SimpleStaking::authors(), vec![addition]);
 		assert_eq!(Balances::free_balance(1), 90);
+		
+		// but no more
 		assert_noop!(
 			SimpleStaking::register_as_author(Origin::signed(1)),
 			Error::<Test>::TooManyAuthors
 		);
 
+		// increase limit
 		assert_ok!(SimpleStaking::set_allowed_author_count(Origin::signed(RootAccount::get()), 5));
+		// but still won't accept dupe..
 		assert_noop!(
 			SimpleStaking::register_as_author(Origin::signed(1)),
 			Error::<Test>::AlreadyAuthor
 		);
+		// or poor author (3 is not endowed)
 		assert_noop!(
-			SimpleStaking::register_as_author(Origin::signed(RootAccount::get())),
+			SimpleStaking::register_as_author(Origin::signed(3)),
 			BalancesError::<Test>::InsufficientBalance
 		);
-		assert_eq!(SimpleStaking::authors(), vec![addition]);
+		// but an endowed account works now
+		assert_ok!(SimpleStaking::register_as_author(Origin::signed(2)));
+		
+		assert_eq!(SimpleStaking::authors().len(), 2);
 	});
 }
 
