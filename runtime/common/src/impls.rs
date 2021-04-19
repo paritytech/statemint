@@ -21,8 +21,8 @@ use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
 /// Logic for the author to get a portion of fees.
-pub struct ToAuthor<R>(sp_std::marker::PhantomData<R>);
-impl<R> OnUnbalanced<NegativeImbalance<R>> for ToAuthor<R>
+pub struct ToStakingPot<R>(sp_std::marker::PhantomData<R>);
+impl<R> OnUnbalanced<NegativeImbalance<R>> for ToStakingPot<R>
 where
 	R: pallet_balances::Config + pallet_simple_staking::Config,
 	<R as frame_system::Config>::AccountId: From<polkadot_primitives::v1::AccountId>,
@@ -31,13 +31,13 @@ where
 {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
 		let numeric_amount = amount.peek();
-		let treasury = <pallet_simple_staking::Pallet<R>>::account_id();
+		let staking_pot = <pallet_simple_staking::Pallet<R>>::account_id();
 		<pallet_balances::Pallet<R>>::resolve_creating(
-			&treasury,
+			&staking_pot,
 			amount,
 		);
 		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit(
-			treasury,
+			staking_pot,
 			numeric_amount,
 		));
 	}
@@ -60,7 +60,7 @@ where
 			if let Some(tips) = fees_then_tips.next() {
 				tips.merge_into(&mut fees);
 			}
-			<ToAuthor<R> as OnUnbalanced<_>>::on_unbalanced(fees);
+			<ToStakingPot<R> as OnUnbalanced<_>>::on_unbalanced(fees);
 		}
 	}
 }
