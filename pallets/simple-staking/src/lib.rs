@@ -36,9 +36,11 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
-
+		
+		/// Origin that can dictate updating parameters of this pallet.
 		type UpdateOrigin: EnsureOrigin<Self::Origin>;
 
+		/// Account Identifier using which the internal treasury account is generated. 
 		type TreasuryId: Get<PalletId>;
 
 		/// Maximum number of authors that we should have. This is used for benchmarking and is not
@@ -52,6 +54,7 @@ pub mod pallet {
 		/// Used only for benchmarking.
 		type MaxInvulnerables: Get<u32>;
 
+		/// The weight information of this pallet. 
 		type WeightInfo: WeightInfo;
 	}
 
