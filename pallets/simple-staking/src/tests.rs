@@ -93,6 +93,7 @@ fn leave_intent() {
 fn on_init() {
 	new_test_ext().execute_with(|| {
 		Balances::make_free_balance_be(&SimpleStaking::account_id(), 100);
+		// 4 is the default author. 
 		assert_eq!(Balances::free_balance(4), 0);
 		assert_eq!(Balances::free_balance(SimpleStaking::account_id()), 100);
 		// triggers `note_author`
