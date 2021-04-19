@@ -63,7 +63,6 @@ benchmarks! {
 	set_allowed_author_count {
 		let max: u32 = 999;
 		let origin = T::UpdateOrigin::successful_origin();
-		// whitelist!(caller);
 	}: {
 		assert_ok!(
 			<SimpleStaking<T>>::set_allowed_author_count(origin, max.clone())
