@@ -36,6 +36,7 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use statemint_runtime::Block;
 use std::{io::Write, net::SocketAddr};
+use crate::service::Executor;
 
 fn load_spec(
 	id: &str,
@@ -213,6 +214,16 @@ pub fn run() -> Result<()> {
 				} = crate::service::new_partial(&config)?;
 				Ok((cmd.run(client, backend), task_manager))
 			})
+		}
+		Some(Subcommand::Benchmark(cmd)) => {
+			if cfg!(feature = "runtime-benchmarks") {
+				let runner = cli.create_runner(cmd)?;
+
+				runner.sync_run(|config| cmd.run::<Block, Executor>(config))
+			} else {
+				Err("Benchmarking wasn't enabled when building the node. \
+				You can enable it with `--features runtime-benchmarks`.".into())
+			}
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");

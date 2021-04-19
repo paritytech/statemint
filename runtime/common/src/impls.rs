@@ -21,23 +21,23 @@ use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
 /// Logic for the author to get a portion of fees.
-pub struct ToAuthor<R>(sp_std::marker::PhantomData<R>);
-impl<R> OnUnbalanced<NegativeImbalance<R>> for ToAuthor<R>
+pub struct ToStakingPot<R>(sp_std::marker::PhantomData<R>);
+impl<R> OnUnbalanced<NegativeImbalance<R>> for ToStakingPot<R>
 where
-	R: pallet_balances::Config + pallet_authorship::Config,
+	R: pallet_balances::Config + pallet_simple_staking::Config,
 	<R as frame_system::Config>::AccountId: From<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::AccountId: Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
 		let numeric_amount = amount.peek();
-		let author = <pallet_authorship::Module<R>>::author();
+		let staking_pot = <pallet_simple_staking::Pallet<R>>::account_id();
 		<pallet_balances::Pallet<R>>::resolve_creating(
-			&<pallet_authorship::Module<R>>::author(),
+			&staking_pot,
 			amount,
 		);
 		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit(
-			author,
+			staking_pot,
 			numeric_amount,
 		));
 	}
@@ -46,7 +46,7 @@ where
 pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
 where
-	R: pallet_balances::Config + pallet_authorship::Config,
+	R: pallet_balances::Config + pallet_simple_staking::Config,
 	<R as frame_system::Config>::AccountId: From<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::AccountId: Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
@@ -60,7 +60,7 @@ where
 			if let Some(tips) = fees_then_tips.next() {
 				tips.merge_into(&mut fees);
 			}
-			<ToAuthor<R> as OnUnbalanced<_>>::on_unbalanced(fees);
+			<ToStakingPot<R> as OnUnbalanced<_>>::on_unbalanced(fees);
 		}
 	}
 }
@@ -69,8 +69,8 @@ where
 mod tests {
 	use super::*;
 	use frame_support::traits::FindAuthor;
-	use frame_support::{parameter_types, weights::DispatchClass};
-	use frame_system::limits;
+	use frame_support::{parameter_types, weights::DispatchClass, PalletId};
+	use frame_system::{limits, EnsureRoot};
 	use polkadot_primitives::v1::AccountId;
 	use sp_core::H256;
 	use sp_runtime::{
@@ -90,6 +90,7 @@ mod tests {
 		{
 			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+			SimpleStaking: pallet_simple_staking::{Pallet, Call, Storage, Event<T>},
 		}
 	);
 
@@ -130,6 +131,7 @@ mod tests {
 		type OnKilledAccount = ();
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
+		type OnSetCode = ();
 	}
 
 	impl pallet_balances::Config for Test {
@@ -151,6 +153,23 @@ mod tests {
 			Some(Default::default())
 		}
 	}
+
+
+	parameter_types! {
+		pub const PotId: PalletId = PalletId(*b"PotStake");
+		pub const MaxAuthors: u32 = 20;
+		pub const MaxInvulnerables: u32 = 20;
+	}
+	impl pallet_simple_staking::Config for Test {
+		type Event = Event;
+		type Currency = Balances;
+		type UpdateOrigin = EnsureRoot<AccountId>;
+		type PotId = PotId;
+		type MaxAuthors = MaxAuthors;
+		type MaxInvulnerables = MaxInvulnerables;
+		type WeightInfo = ();
+	}
+
 	impl pallet_authorship::Config for Test {
 		type FindAuthor = OneAuthor;
 		type UncleGenerations = ();
@@ -180,7 +199,7 @@ mod tests {
 			DealWithFees::on_unbalanceds(vec![fee, tip].into_iter());
 
 			// Author gets 100% of tip and 100% of fee = 30
-			assert_eq!(Balances::free_balance(AccountId::default()), 30);
+			assert_eq!(Balances::free_balance(SimpleStaking::account_id()), 30);
 		});
 	}
 }

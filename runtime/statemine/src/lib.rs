@@ -28,7 +28,7 @@ pub mod constants;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::traits::{
-	AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify,
+	AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify, AccountIdConversion
 };
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -70,7 +70,7 @@ pub use frame_support::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
 	},
-	RuntimeDebug, StorageValue,
+	RuntimeDebug, StorageValue, PalletId
 };
 use runtime_common::impls::DealWithFees;
 pub use pallet_balances::Call as BalancesCall;
@@ -127,6 +127,8 @@ pub mod opaque {
 		pub struct SessionKeys {}
 	}
 }
+
+mod weights;
 
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
@@ -611,6 +613,30 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 }
 
+parameter_types! {
+	pub const PotId: PalletId = PalletId(*b"PotStake");
+	pub const MaxAuthors: u32 = 1000;
+	pub const MaxInvulnerables: u32 = 100;
+}
+
+frame_support::ord_parameter_types! {
+	pub const RelayChainCouncilOrigin: AccountId = <
+		frame_support::PalletId
+		as
+		AccountIdConversion<AccountId>
+	>::into_account(&frame_support::PalletId(*b"TODOTODO"));
+}
+
+impl pallet_simple_staking::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type UpdateOrigin = frame_system::EnsureSignedBy<RelayChainCouncilOrigin, AccountId>;
+	type PotId = PotId;
+	type MaxAuthors = MaxAuthors;
+	type MaxInvulnerables = MaxInvulnerables;
+	type WeightInfo = weights::pallet_simple_staking::WeightInfo<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -631,7 +657,7 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
 		Utility: pallet_utility::{Pallet, Call, Event},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
-
+		SimpleStaking: pallet_simple_staking::{Pallet, Call, Storage, Event<T>, Config<T>},
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
@@ -773,7 +799,7 @@ impl_runtime_apis! {
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 
-			use frame_system_benchmarking::Module as SystemBench;
+			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
@@ -793,8 +819,14 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_balances, Balances);
-			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+			//TODO we should re run all benchmarks for used pallets together
+			// add_benchmark!(params, batches, pallet_assets, Assets);
+			// add_benchmark!(params, batches, pallet_balances, Balances);
+			// add_benchmark!(params, batches, pallet_multisig, Multisig);
+			// add_benchmark!(params, batches, pallet_proxy, Proxy);
+			// add_benchmark!(params, batches, pallet_utility, Utility);
+			// add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+			add_benchmark!(params, batches, pallet_simple_staking, SimpleStaking);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

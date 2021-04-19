@@ -274,28 +274,34 @@ git = 'https://github.com/paritytech/polkadot'
 branch = 'rococo-v1'
 default-features = false
 
-[dependencies.template]
+[dependencies.pallet-simple-staking]
 default-features = false
-package = 'pallet-template'
-path = '../../pallets/template'
+path = '../../pallets/simple-staking'
 
 [dependencies.runtime-common]
 default-features = false
+version = "0.8.30"
 path = '../common'
 
 
 [features]
 default = ['std']
 runtime-benchmarks = [
+	'hex-literal',
+	'xcm-builder/runtime-benchmarks',
 	'sp-runtime/runtime-benchmarks',
 	'frame-benchmarking',
 	'frame-support/runtime-benchmarks',
 	'frame-system-benchmarking',
-	'hex-literal',
 	'frame-system/runtime-benchmarks',
+	'pallet-assets/runtime-benchmarks',
 	'pallet-balances/runtime-benchmarks',
+	'pallet-multisig/runtime-benchmarks',
+	'pallet-proxy/runtime-benchmarks',
+	'pallet-utility/runtime-benchmarks',
 	'pallet-timestamp/runtime-benchmarks',
-	'template/runtime-benchmarks',
+	'pallet-simple-staking/runtime-benchmarks',
+	'pallet-xcm/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
@@ -320,15 +326,15 @@ std = [
 	'pallet-balances/std',
 	'pallet-multisig/std',
 	'pallet-proxy/std',
-	'pallet-balances/std',
 	'pallet-utility/std',
 	'pallet-randomness-collective-flip/std',
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-timestamp/std',
 	'pallet-sudo/std',
 	'pallet-xcm/std',
-	'node-primitives/std',
 	'pallet-transaction-payment/std',
+	'pallet-simple-staking/std',
+	'node-primitives/std',
 	'parachain-info/std',
 	'cumulus-pallet-parachain-system/std',
 	"cumulus-pallet-xcmp-queue/std",
@@ -341,5 +347,4 @@ std = [
 	'polkadot-runtime-common/std',
 	'runtime-common/std',
 	'polkadot-primitives/std',
-	'template/std',
 ]

@@ -56,3 +56,4 @@ configLocal.json
 *.json.json
 node_modules
 polkadot
+.vscode
