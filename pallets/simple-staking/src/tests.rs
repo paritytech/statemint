@@ -95,8 +95,12 @@ fn on_init() {
 		Balances::make_free_balance_be(&SimpleStaking::account_id(), 100);
 		assert_eq!(Balances::free_balance(4), 0);
 		assert_eq!(Balances::free_balance(SimpleStaking::account_id()), 100);
+		// triggers `note_author`
 		Authorship::on_initialize(1);
+		
+		// half of the pot goes to the author. 
 		assert_eq!(Balances::free_balance(4), 50);
+		// half stays. 
 		assert_eq!(Balances::free_balance(SimpleStaking::account_id()), 50);
 	});
 }
