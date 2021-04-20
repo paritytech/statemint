@@ -315,7 +315,6 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const KusamaLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
 	pub const AssetDeposit: Balance = 100 * EXISTENTIAL_DEPOSIT;
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const StringLimit: u32 = 50;
@@ -323,13 +322,14 @@ parameter_types! {
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
 	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
-	pub const RelayExecutive: BodyId = BodyId::Executive;
+	pub const RelayPrefix: MultiLocation = MultiLocation::X1(Junction::Parent);
+	pub const RelayBody: BodyId = BodyId::Unit;
 }
 
 pub type RelayCouncilMajority = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<KusamaLocation, RelayExecutive>>,
+	EnsureXcm<IsMajorityOfBody<RelayPrefix, RelayBody>>,
 >;
 
 impl pallet_assets::Config for Runtime {
