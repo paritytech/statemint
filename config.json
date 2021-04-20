@@ -23,8 +23,8 @@
 	"parachains": [
 		{
 			"bin": "./target/release/statemint",
-			"chain": "statemint-local",
-			"id": "200",
+			"chain": "statemint-dev",
+			"id": "1",
 			"wsPort": 9988,
 			"port": 31200,
 			"balance": "1000000000000000000000",
@@ -32,7 +32,7 @@
 		},
 		{
 			"bin": "./target/release/statemint",
-			"chain": "statemint-local",
+			"chain": "statemint-dev",
 			"id": "300",
 			"wsPort": 9999,
 			"port": 31300,
@@ -44,7 +44,7 @@
 	],
 	"hrmpChannels": [
 		{
-			"sender": 200,
+			"sender": 1,
 			"recipient": 300,
 			"maxCapacity": 8,
 			"maxMessageSize": 512

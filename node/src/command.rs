@@ -44,7 +44,7 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		"statemint-dev" => Box::new(chain_spec::statemint_development_config(para_id)),
-		"statemint-local" => Box::new(chain_spec::statemint_local_config(1.into())),
+		"statemint-local" => Box::new(chain_spec::statemint_local_config(para_id)),
 		"statemint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../specs/statemint.json")[..],
 		)?),
