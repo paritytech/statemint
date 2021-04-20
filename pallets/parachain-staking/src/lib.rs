@@ -13,6 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Parachain staking pallet.
+//!
+//! A pallet to manage collators in a parachain.
+//!
+//! The final [`Collators`] are aggregated from two individual lists. 1. [`Invulnerables`], a set of
+//! governance controlled collators. These accounts will always be collators. 2. [`Candidates`]:
+//! these are *candidates to the collation task* and may or may not be elected as a final collator.
+//!
+//! The current implementation resolves congestion of [`Candidates`] by a first-come-first-serve
+//! manner.
+//!
+//! All active collators are rewarded equally for being the block author, by receiving half of the
+//! block's transaction fees.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
@@ -39,18 +53,21 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use frame_system::Config as SystemConfig;
 	use frame_support::{
-		sp_runtime::{RuntimeDebug, traits::{AccountIdConversion}},
+		sp_runtime::{RuntimeDebug, traits::{AccountIdConversion, Zero, One}},
 		weights::DispatchClass,
 	};
 	use core::ops::Div;
 	pub use crate::weights::WeightInfo;
 
+	type BalanceOf<T> =
+		<<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		/// Because this pallet emits events, it depends on the runtime's definition of an event.
+		/// Overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
 
@@ -60,28 +77,35 @@ pub mod pallet {
 		/// Account Identifier using which the internal treasury account is generated.
 		type PotId: Get<PalletId>;
 
-		/// Maximum number of authors that we should have. This is used for benchmarking and is not
+		/// Maximum number of candidates that we should have. This is used for benchmarking and is not
 		/// enforced.
 		///
 		/// This does not take into account the invulnerables.
-		type MaxAuthors: Get<u32>;
+		type MaxCandidates: Get<u32>;
 
 		/// Maximum number of invulnerables.
 		///
 		/// Used only for benchmarking.
 		type MaxInvulnerables: Get<u32>;
 
+		/// Length of an epoch. Each epoch is merely a fixed period of time during which the
+		/// [`Collators`] will not change. At each block where `block % epoch == 0`, based on the
+		/// logic of the pallet, a new collator set is created from [`Candidates`] and
+		/// [`Invulnerables`].
+		type Epoch: Get<Self::BlockNumber>;
+
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
 	}
 
-	type BalanceOf<T> =
-		<<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
-
+	/// Basic information about a collation candidate.
 	#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
-	pub struct AuthorInfo<AccountId, Balance, BlockNumber> {
+	pub struct CandidateInfo<AccountId, Balance, BlockNumber> {
+		/// Account id
 		pub who: AccountId,
+		/// Reserved deposit.
 		pub deposit: Balance,
+		/// Last block at which they authored a block.
 		pub last_block: Option<BlockNumber>,
 	}
 
@@ -92,25 +116,33 @@ pub mod pallet {
 	// The pallet's runtime storage items.
 	// https://substrate.dev/docs/en/knowledgebase/runtime/storage
 
+	/// The invulnerable, fixed collators.
 	#[pallet::storage]
 	#[pallet::getter(fn invulnerables)]
-	pub type Invulnerables<T: Config>= StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+	pub type Invulnerables<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
+	/// The (community, limited) collation candidates.
 	#[pallet::storage]
-	#[pallet::getter(fn authors)]
-	pub type Authors<T: Config> = StorageValue<_, Vec<AuthorInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>>, ValueQuery>;
+	#[pallet::getter(fn candidates)]
+	pub type Candidates<T: Config> = StorageValue<_, Vec<CandidateInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>>, ValueQuery>;
 
+	/// Desired number of candidates.
+	///
+	/// This should ideally always be less than [`Config::MaxCandidates`] for weights to be correct.
 	#[pallet::storage]
-	#[pallet::getter(fn allowed_authors)]
-	pub type AllowedAuthors<T> = StorageValue<_, u32, ValueQuery>;
+	#[pallet::getter(fn desired_candidates)]
+	pub type DesiredCandidate<T> = StorageValue<_, u32, ValueQuery>;
 
+	/// Fixed deposit bond for each candidate.
 	#[pallet::storage]
-	#[pallet::getter(fn author_bond)]
-	pub type AuthorBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+	#[pallet::getter(fn candidacy_bond)]
+	pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
-	#[pallet::storage]
-	#[pallet::getter(fn authority_bond)]
-	pub type AuthorityBond<T: Config>= StorageValue<_, BalanceOf<T>>;
+	/// Final collator set that this pallet computes. Change only every [`Self::Epoch`].
+	// #[pallet::storage]
+	// #[pallet::getter(fn collators)]
+	// pub type Collators<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+	// TODO: @kianenigma
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -134,6 +166,8 @@ pub mod pallet {
 				"genesis invulnerables are more than T::MaxInvulnerables",
 			);
 			<Invulnerables<T>>::put(&self.invulnerables);
+			// TODO: @kianenigma
+			// <Collators<T>>::put(&self.invulnerables);
 		}
 	}
 
@@ -141,29 +175,36 @@ pub mod pallet {
 	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. [something, who]
 		NewInvulnerables(Vec<T::AccountId>),
-		NewAllowedAuthorCount(u32),
-		NewAuthorBond(BalanceOf<T>),
-		AuthorAdded(T::AccountId, BalanceOf<T>),
-		AuthorRemoved(T::AccountId)
+		NewDesiredCandidate(u32),
+		NewCandidacyBond(BalanceOf<T>),
+		CandidateAdded(T::AccountId, BalanceOf<T>),
+		CandidateRemoved(T::AccountId)
 	}
 
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		TooManyAuthors,
+		TooManyCandidates,
 		Unknown,
 		Permission,
-		AlreadyAuthor,
-		NotAuthor
+		AlreadyCandidate,
+		NotCandidate,
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		//TODO add in on init hook to concat invulnerables with Authors and set as aura authorities
-		// Also consider implementing era's of X block
+		// TODO: @kianenigma
+		// fn on_initialize(n: T::BlockNumber) -> Weight {
+		// 	if (n % T::Epoch::get().max(One::one())).is_zero() {
+		// 		let mut collators = Self::invulnerables();
+		// 		collators.extend(Self::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>());
+		// 		<Collators<T>>::put(collators);
+		// 		T::DbWeight::get().reads_writes(2, 1)
+		// 	} else {
+		// 		Zero::zero()
+		// 	}
+		// }
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -188,75 +229,78 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(T::WeightInfo::set_allowed_author_count())]
-		pub fn set_allowed_author_count(origin: OriginFor<T>, allowed: u32) -> DispatchResultWithPostInfo {
+		#[pallet::weight(T::WeightInfo::set_max_candidates())]
+		pub fn set_max_candidates(origin: OriginFor<T>, max: u32) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			// we trust origin calls, this is just a for more accurate benchmarking
-			if allowed > T::MaxAuthors::get() {
+			if max > T::MaxCandidates::get() {
 				log::warn!(
-					"allowed > T::MaxAuthors; you might need to run benchmarks again"
+					"max > T::MaxCandidates; you might need to run benchmarks again"
 				);
 			}
-			<AllowedAuthors<T>>::put(&allowed);
-			Self::deposit_event(Event::NewAllowedAuthorCount(allowed));
+			<DesiredCandidate<T>>::put(&max);
+			Self::deposit_event(Event::NewDesiredCandidate(max));
 			Ok(().into())
 		}
 
-		#[pallet::weight(T::WeightInfo::set_author_bond())]
-		pub fn set_author_bond(origin: OriginFor<T>, author_bond: BalanceOf<T>) -> DispatchResultWithPostInfo {
+		#[pallet::weight(T::WeightInfo::set_candidacy_bond())]
+		pub fn set_candidacy_bond(origin: OriginFor<T>, bond: BalanceOf<T>) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			<AuthorBond<T>>::put(&author_bond);
-			Self::deposit_event(Event::NewAuthorBond(author_bond));
+			<CandidacyBond<T>>::put(&bond);
+			Self::deposit_event(Event::NewCandidacyBond(bond));
 			Ok(().into())
 		}
 
-		#[pallet::weight(T::WeightInfo::register_as_author(T::MaxAuthors::get()))]
-		pub fn register_as_author(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			// lock deposit to start or require min?
+		#[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
+		pub fn register_as_candidate(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			let deposit = <AuthorBond<T>>::get();
-			let length = <Authors<T>>::decode_len().unwrap_or_default();
-			ensure!((length as u32) < Self::allowed_authors(), Error::<T>::TooManyAuthors);
-			let new_author = AuthorInfo {
-				who: who.clone(),
-				deposit,
-				last_block: None
-			};
-			let author_count = <Authors<T>>::try_mutate(|authors| -> Result<usize, DispatchError> {
-									if authors.into_iter().any(|author| author.who == who) {
-										Err(Error::<T>::AlreadyAuthor)?
-									} else {
-										T::Currency::reserve(&who, deposit)?;
-										authors.push(new_author);
-										Self::deposit_event(Event::AuthorAdded(who, deposit));
-										Ok(authors.len())
-									}
-								})?;
-			Ok(Some(T::WeightInfo::register_as_author(author_count as u32)).into())
+
+			// ensure we are below limit.
+			let length = <Candidates<T>>::decode_len().unwrap_or_default();
+			ensure!((length as u32) < Self::desired_candidates(), Error::<T>::TooManyCandidates);
+
+			let deposit = Self::candidacy_bond();
+			let incoming = CandidateInfo { who: who.clone(), deposit, last_block: None };
+
+			let current_count = <Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
+				if candidates.into_iter().any(|candidate| candidate.who == who) {
+					Err(Error::<T>::AlreadyCandidate)?
+				} else {
+					T::Currency::reserve(&who, deposit)?;
+					candidates.push(incoming);
+					Ok(candidates.len())
+				}
+			})?;
+
+			Self::deposit_event(Event::CandidateAdded(who, deposit));
+			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
 		}
 
-		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxAuthors::get()))]
+		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			let author_count = <Authors<T>>::try_mutate(|authors| -> Result<usize, DispatchError> {
-				let index = authors.iter().position(|author| author.who == who).ok_or(Error::<T>::NotAuthor)?;
-				T::Currency::unreserve(&who, authors[index].deposit);
-				authors.remove(index);
-				Ok(authors.len())
+
+			let current_count = <Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
+				let index = candidates.iter().position(|candidate| candidate.who == who).ok_or(Error::<T>::NotCandidate)?;
+				T::Currency::unreserve(&who, candidates[index].deposit);
+				candidates.remove(index);
+				Ok(candidates.len())
 			})?;
-			Self::deposit_event(Event::AuthorRemoved(who));
-			Ok(Some(T::WeightInfo::leave_intent(author_count as u32)).into())
+
+			Self::deposit_event(Event::CandidateRemoved(who));
+			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Get a unique, inaccessible account id from the `PotId`.
 		pub fn account_id() -> T::AccountId {
 			T::PotId::get().into_account()
 		}
 	}
 
-	/// Keep track of number of authored blocks per authority, uncles are counted as
-	/// well since they're a valid proof of being online.
+	/// Keep track of number of authored blocks per authority, uncles are counted as well since
+	/// they're a valid proof of being online.
 	impl<T: Config + pallet_authorship::Config>
 		pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>
 	{

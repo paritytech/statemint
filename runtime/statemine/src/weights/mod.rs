@@ -1,1 +1,1 @@
-pub mod pallet_simple_staking;
+pub mod pallet_parachain_staking;

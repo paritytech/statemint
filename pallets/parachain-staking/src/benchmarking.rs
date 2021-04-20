@@ -12,12 +12,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//! Benchmarking setup for pallet-simple-staking
+
+//! Benchmarking setup for pallet-parachain-staking
 
 use super::*;
 
 #[allow(unused)]
-use crate::Pallet as SimpleStaking;
+use crate::Pallet as ParachainStaking;
 use sp_std::prelude::*;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller, account};
 use frame_system::{RawOrigin, EventRecord};
@@ -49,12 +50,12 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	assert_eq!(event, &system_event);
 }
 
-fn register_authors<T: Config>(count: u32) {
-	let authors = (0..count).map(|c| account("author", c, SEED)).collect::<Vec<_>>();
-	assert!(<AuthorBond<T>>::get() > 0u32.into(), "Bond cannot be zero!");
-	for who in authors {
-		T::Currency::make_free_balance_be(&who, <AuthorBond<T>>::get() * 2u32.into());
-		<SimpleStaking<T>>::register_as_author(RawOrigin::Signed(who).into()).unwrap();
+fn register_candidates<T: Config>(count: u32) {
+	let candidates = (0..count).map(|c| account("candidate", c, SEED)).collect::<Vec<_>>();
+	assert!(<CandidacyBond<T>>::get() > 0u32.into(), "Bond cannot be zero!");
+	for who in candidates {
+		T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 2u32.into());
+		<ParachainStaking<T>>::register_as_candidate(RawOrigin::Signed(who).into()).unwrap();
 	}
 }
 
@@ -63,48 +64,49 @@ benchmarks! {
 
 	set_invulnerables {
 		let b in 1 .. T::MaxInvulnerables::get();
-		let new_invulnerables = (0..b).map(|c| account("author", c, SEED)).collect::<Vec<_>>();
+		let new_invulnerables = (0..b).map(|c| account("candidate", c, SEED)).collect::<Vec<_>>();
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
-			<SimpleStaking<T>>::set_invulnerables(origin, new_invulnerables.clone())
+			<ParachainStaking<T>>::set_invulnerables(origin, new_invulnerables.clone())
 		);
 	}
 	verify {
 		assert_last_event::<T>(Event::NewInvulnerables(new_invulnerables).into());
 	}
 
-	set_allowed_author_count {
+	aet_max_candidate {
 		let max: u32 = 999;
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
-			<SimpleStaking<T>>::set_allowed_author_count(origin, max.clone())
+			<ParachainStaking<T>>::set_max_candidates(origin, max.clone())
 		);
 	}
 	verify {
-		assert_last_event::<T>(Event::NewAllowedAuthorCount(max).into());
+		assert_last_event::<T>(Event::NewDesiredCandidate(max).into());
 	}
 
-	set_author_bond {
+	set_candidacy_bond {
 		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 10u32.into();
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
-			<SimpleStaking<T>>::set_author_bond(origin, bond.clone())
+			<ParachainStaking<T>>::set_candidacy_bond(origin, bond.clone())
 		);
 	}
 	verify {
-		assert_last_event::<T>(Event::NewAuthorBond(bond).into());
+		assert_last_event::<T>(Event::NewCandidacyBond(bond).into());
 	}
 
-	// worse case is when we have all the max-author slots filled except one, and we fill that one.
-	register_as_author {
-		let c in 1 .. T::MaxAuthors::get();
+	// worse case is when we have all the max-candidate slots filled except one, and we fill that
+	// one.
+	register_as_candidate {
+		let c in 1 .. T::MaxCandidates::get();
 
-		<AuthorBond<T>>::put(T::Currency::minimum_balance());
-		<AllowedAuthors<T>>::put(c + 1);
-		register_authors::<T>(c);
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidate<T>>::put(c + 1);
+		register_candidates::<T>(c);
 
 		let caller: T::AccountId = whitelisted_caller();
 		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
@@ -112,36 +114,36 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller.clone()))
 	verify {
-		assert_last_event::<T>(Event::AuthorAdded(caller, bond / 2u32.into()).into());
+		assert_last_event::<T>(Event::CandidateAdded(caller, bond / 2u32.into()).into());
 	}
 
-	// worse case is the last author leaving.
+	// worse case is the last candidate leaving.
 	leave_intent {
-		let c in 1 .. T::MaxAuthors::get();
-		<AuthorBond<T>>::put(T::Currency::minimum_balance());
-		<AllowedAuthors<T>>::put(c);
-		register_authors::<T>(c);
+		let c in 1 .. T::MaxCandidates::get();
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidate<T>>::put(c);
+		register_candidates::<T>(c);
 
-		let leaving = <Authors<T>>::get().last().unwrap().who.clone();
+		let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
 		whitelist!(leaving);
 	}: _(RawOrigin::Signed(leaving.clone()))
 	verify {
-		assert_last_event::<T>(Event::AuthorRemoved(leaving).into());
+		assert_last_event::<T>(Event::CandidateRemoved(leaving).into());
 	}
 
-	// worse case is paying a non-existing author account.
+	// worse case is paying a non-existing candidate account.
 	note_author {
 		T::Currency::make_free_balance_be(
-			&<SimpleStaking<T>>::account_id(),
+			&<ParachainStaking<T>>::account_id(),
 			T::Currency::minimum_balance() * 2u32.into(),
 		);
 		let author = account("author", 0, SEED);
 		assert!(T::Currency::free_balance(&author) == 0u32.into());
 	}: {
-		<SimpleStaking<T> as EventHandler<_, _>>::note_author(author.clone())
+		<ParachainStaking<T> as EventHandler<_, _>>::note_author(author.clone())
 	} verify {
 		assert!(T::Currency::free_balance(&author) > 0u32.into());
 	}
 }
 
-impl_benchmark_test_suite!(SimpleStaking, crate::mock::new_test_ext(), crate::mock::Test,);
+impl_benchmark_test_suite!(ParachainStaking, crate::mock::new_test_ext(), crate::mock::Test,);

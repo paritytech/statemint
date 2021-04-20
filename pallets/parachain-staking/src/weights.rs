@@ -21,17 +21,17 @@
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;
 
-// The weight info trait for `pallet_simple_staking`.
+// The weight info trait for `pallet_parachain_staking`.
 pub trait WeightInfo {
 	fn set_invulnerables(_b: u32) -> Weight;
-	fn set_allowed_author_count() -> Weight;
-	fn set_author_bond() -> Weight;
-	fn register_as_author(_c: u32) -> Weight;
+	fn set_max_candidates() -> Weight;
+	fn set_candidacy_bond() -> Weight;
+	fn register_as_candidate(_c: u32) -> Weight;
 	fn leave_intent(_c: u32) -> Weight;
 	fn note_author() -> Weight;
 }
 
-/// Weights for pallet_simple_staking using the Substrate node and recommended hardware.
+/// Weights for pallet_parachain_staking using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn set_invulnerables(b: u32, ) -> Weight {
@@ -40,15 +40,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add((118_000 as Weight).saturating_mul(b as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
-	fn set_allowed_author_count() -> Weight {
+	fn set_max_candidates() -> Weight {
 		(25_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
-	fn set_author_bond() -> Weight {
+	fn set_candidacy_bond() -> Weight {
 		(25_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
-	fn register_as_author(c: u32, ) -> Weight {
+	fn register_as_candidate(c: u32, ) -> Weight {
 		(82_496_000 as Weight)
 			// Standard Error: 1_000
 			.saturating_add((266_000 as Weight).saturating_mul(c as Weight))
@@ -78,15 +78,15 @@ impl WeightInfo for () {
 			.saturating_add((118_000 as Weight).saturating_mul(b as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
-	fn set_allowed_author_count() -> Weight {
+	fn set_max_candidates() -> Weight {
 		(25_000_000 as Weight)
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
-	fn set_author_bond() -> Weight {
+	fn set_candidacy_bond() -> Weight {
 		(25_000_000 as Weight)
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
-	fn register_as_author(c: u32, ) -> Weight {
+	fn register_as_candidate(c: u32, ) -> Weight {
 		(82_496_000 as Weight)
 			// Standard Error: 1_000
 			.saturating_add((266_000 as Weight).saturating_mul(c as Weight))
