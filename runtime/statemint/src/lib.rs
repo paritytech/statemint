@@ -42,15 +42,17 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_system::{
+	EnsureOneOf, EnsureRoot,
 	limits::{BlockLength, BlockWeights},
 };
 
 // Polkadot imports
+use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{
 	BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate,
 };
-use xcm::v0::{Junction, MultiLocation, NetworkId};
+use xcm::v0::{BodyId, Junction, MultiLocation, NetworkId};
 use xcm_builder::{
 	AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
@@ -313,6 +315,7 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
+	pub const PolkadotLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
 	pub const AssetDeposit: Balance = 100 * EXISTENTIAL_DEPOSIT;
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const StringLimit: u32 = 50;
@@ -320,7 +323,14 @@ parameter_types! {
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
 	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
+	pub const RelayExecutive: BodyId = BodyId::Executive;
 }
+
+pub type RelayCouncilMajority = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	EnsureXcm<IsMajorityOfBody<PolkadotLocation, RelayExecutive>>,
+>;
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
@@ -329,7 +339,7 @@ impl pallet_assets::Config for Runtime {
 	type Currency = Balances;
 	// TODO: Change to proportion at least 60% (3/5) of Relay Chain Council.
 	// https://github.com/paritytech/statemint/issues/4
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type ForceOrigin = RelayCouncilMajority;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
@@ -575,7 +585,7 @@ impl Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = FixedRateOfConcreteFungible<WeightPrice>;
+	type Trader = FixedRateOfConcreteFungible<WeightPrice, ()>;
 	type ResponseHandler = ();	// Don't handle responses for now.
 }
 
