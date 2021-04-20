@@ -4,7 +4,7 @@ panic = 'unwind'
 [workspace]
 members = [
 	'node',
-	'pallets/simple-staking',
+	'pallets/parachain-staking',
 	'runtime/statemint',
 	'runtime/statemine',
 ]

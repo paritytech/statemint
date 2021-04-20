@@ -442,7 +442,7 @@ impl InstanceFilter<Call> for ProxyType {
 				Call::Multisig(..)
 			),
 			ProxyType::Staking => matches!(c,
-				Call::SimpleStaking(..) |
+				Call::ParachainStaking(..) |
 				Call::Utility(..) |
 				Call::Multisig(..)
 			)
@@ -617,7 +617,8 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxAuthors: u32 = 1000;
+	pub const MaxCandidates: u32 = 1000;
+	pub const Epoch: BlockNumber = 6 * HOURS;
 	pub const MaxInvulnerables: u32 = 100;
 }
 
@@ -629,14 +630,15 @@ frame_support::ord_parameter_types! {
 	>::into_account(&frame_support::PalletId(*b"TODOTODO"));
 }
 
-impl pallet_simple_staking::Config for Runtime {
+impl pallet_parachain_staking::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = frame_system::EnsureSignedBy<RelayChainCouncilOrigin, AccountId>;
 	type PotId = PotId;
-	type MaxAuthors = MaxAuthors;
+	type MaxCandidates = MaxCandidates;
+	type Epoch = Epoch;
 	type MaxInvulnerables = MaxInvulnerables;
-	type WeightInfo = weights::pallet_simple_staking::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_parachain_staking::WeightInfo<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -659,7 +661,7 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
 		Utility: pallet_utility::{Pallet, Call, Event},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
-		SimpleStaking: pallet_simple_staking::{Pallet, Call, Storage, Event<T>, Config<T>},
+		ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>},
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
@@ -828,7 +830,7 @@ impl_runtime_apis! {
 			// add_benchmark!(params, batches, pallet_proxy, Proxy);
 			// add_benchmark!(params, batches, pallet_utility, Utility);
 			// add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, pallet_simple_staking, SimpleStaking);
+			add_benchmark!(params, batches, pallet_parachain_staking, ParachainStaking);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
