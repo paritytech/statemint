@@ -127,12 +127,14 @@ impl pallet_aura::Config for Test {
 ord_parameter_types! {
 	pub const RootAccount: u64 = 777;
 }
+
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 20;
 	pub const MaxInvulnerables: u32 = 20;
 	pub const Epoch: u64 = 10;
 }
+
 impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
@@ -149,14 +151,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let genesis = pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
 			(1, 100),
-			(2, 200),
+			(2, 100),
+			(3, 100),
+			(4, 100),
+			(5, 100),
 		],
 	};
 	let genesis_staking = parachain_staking::GenesisConfig::<Test> {
+		desired_candidates: 2,
+		candidacy_bond: 10,
 		invulnerables: vec![
 			1,
 			2,
-			3,
 		],
 	};
 	genesis.assimilate_storage(&mut t).unwrap();

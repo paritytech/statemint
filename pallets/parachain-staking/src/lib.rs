@@ -131,7 +131,7 @@ pub mod pallet {
 	/// This should ideally always be less than [`Config::MaxCandidates`] for weights to be correct.
 	#[pallet::storage]
 	#[pallet::getter(fn desired_candidates)]
-	pub type DesiredCandidate<T> = StorageValue<_, u32, ValueQuery>;
+	pub type DesiredCandidates<T> = StorageValue<_, u32, ValueQuery>;
 
 	/// Fixed deposit bond for each candidate.
 	#[pallet::storage]
@@ -139,14 +139,15 @@ pub mod pallet {
 	pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
 	/// Final collator set that this pallet computes. Change only every [`Self::Epoch`].
-	// #[pallet::storage]
-	// #[pallet::getter(fn collators)]
-	// pub type Collators<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
-	// TODO: @kianenigma
+	#[pallet::storage]
+	#[pallet::getter(fn collators)]
+	pub type Collators<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		pub invulnerables: Vec<T::AccountId>,
+		pub candidacy_bond: BalanceOf<T>,
+		pub desired_candidates: u32,
 	}
 
 	#[cfg(feature = "std")]
@@ -154,6 +155,8 @@ pub mod pallet {
 		fn default() -> Self {
 			Self {
 				invulnerables: Default::default(),
+				candidacy_bond: Default::default(),
+				desired_candidates: Default::default(),
 			}
 		}
 	}
@@ -165,9 +168,15 @@ pub mod pallet {
 				T::MaxInvulnerables::get() >= (self.invulnerables.len() as u32),
 				"genesis invulnerables are more than T::MaxInvulnerables",
 			);
+			assert!(
+				T::MaxCandidates::get() >= self.desired_candidates,
+				"genesis desired_candidates are more than T::MaxCandidates",
+			);
+
+			<DesiredCandidates<T>>::put(&self.desired_candidates);
+			<CandidacyBond<T>>::put(&self.candidacy_bond);
 			<Invulnerables<T>>::put(&self.invulnerables);
-			// TODO: @kianenigma
-			// <Collators<T>>::put(&self.invulnerables);
+			<Collators<T>>::put(&self.invulnerables);
 		}
 	}
 
@@ -176,10 +185,11 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		NewInvulnerables(Vec<T::AccountId>),
-		NewDesiredCandidate(u32),
+		NewDesiredCandidates(u32),
 		NewCandidacyBond(BalanceOf<T>),
 		CandidateAdded(T::AccountId, BalanceOf<T>),
-		CandidateRemoved(T::AccountId)
+		CandidateRemoved(T::AccountId),
+		EpochChanged(Vec<T::AccountId>),
 	}
 
 	// Errors inform users that something went wrong.
@@ -190,21 +200,22 @@ pub mod pallet {
 		Permission,
 		AlreadyCandidate,
 		NotCandidate,
+		AlreadyInvulnerable,
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		// TODO: @kianenigma
-		// fn on_initialize(n: T::BlockNumber) -> Weight {
-		// 	if (n % T::Epoch::get().max(One::one())).is_zero() {
-		// 		let mut collators = Self::invulnerables();
-		// 		collators.extend(Self::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>());
-		// 		<Collators<T>>::put(collators);
-		// 		T::DbWeight::get().reads_writes(2, 1)
-		// 	} else {
-		// 		Zero::zero()
-		// 	}
-		// }
+		fn on_initialize(n: T::BlockNumber) -> Weight {
+			if (n % T::Epoch::get().max(One::one())).is_zero() {
+				let mut collators = Self::invulnerables();
+				collators.extend(Self::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>());
+				Self::deposit_event(Event::EpochChanged(collators.clone()));
+				<Collators<T>>::put(collators);
+				T::DbWeight::get().reads_writes(2, 1)
+			} else {
+				Zero::zero()
+			}
+		}
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -229,8 +240,8 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(T::WeightInfo::set_max_candidates())]
-		pub fn set_max_candidates(origin: OriginFor<T>, max: u32) -> DispatchResultWithPostInfo {
+		#[pallet::weight(T::WeightInfo::set_desired_candidates())]
+		pub fn set_desired_candidates(origin: OriginFor<T>, max: u32) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			// we trust origin calls, this is just a for more accurate benchmarking
 			if max > T::MaxCandidates::get() {
@@ -238,8 +249,8 @@ pub mod pallet {
 					"max > T::MaxCandidates; you might need to run benchmarks again"
 				);
 			}
-			<DesiredCandidate<T>>::put(&max);
-			Self::deposit_event(Event::NewDesiredCandidate(max));
+			<DesiredCandidates<T>>::put(&max);
+			Self::deposit_event(Event::NewDesiredCandidates(max));
 			Ok(().into())
 		}
 
@@ -258,6 +269,7 @@ pub mod pallet {
 			// ensure we are below limit.
 			let length = <Candidates<T>>::decode_len().unwrap_or_default();
 			ensure!((length as u32) < Self::desired_candidates(), Error::<T>::TooManyCandidates);
+			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
 
 			let deposit = Self::candidacy_bond();
 			let incoming = CandidateInfo { who: who.clone(), deposit, last_block: None };
