@@ -1,6 +1,6 @@
 [build-dependencies.substrate-wasm-builder]
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 version = '4.0.0'
 
 [package]
@@ -15,13 +15,13 @@ targets = ['x86_64-unknown-linux-gnu']
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 version = '3.0.0'
 
 [dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 version = '3.0.0'
 
 [dependencies.codec]
@@ -33,51 +33,51 @@ version = '2.0.0'
 [dependencies.frame-executive]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 version = '3.0.0'
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 version = '3.0.0'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 version = '3.0.0'
 
 
 [dependencies.pallet-balances]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 version = '3.0.0'
 
 
 [dependencies.node-primitives]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 
 
 [dependencies.polkadot-runtime-common]
 git = 'https://github.com/paritytech/polkadot'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 default-features = false
 
 
 # Polkadot dependencies
 [dependencies.polkadot-primitives]
 git = 'https://github.com/paritytech/polkadot'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 default-features = false
 
 [dependencies.pallet-authorship]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -85,19 +85,19 @@ serde = { version = "1.0.119" }
 [dev-dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 version = '3.0.0'
 
 [dev-dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 version = '3.0.0'
 
 [dev-dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'rococo-v1'
+branch = 'apopiak-xcm-origin'
 version = '3.0.0'
 
 [features]
