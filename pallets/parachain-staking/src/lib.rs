@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Simple staking pallet.
+//! Parachain staking pallet.
 //!
 //! A pallet to manage collators in a parachain.
 //!

@@ -47,7 +47,7 @@ where
 pub fn statemint_development_config(id: ParaId) -> ChainSpec {
 	ChainSpec::from_genesis(
 		// Name
-		"Statemint_Development",
+		"Statemint Development",
 		// ID
 		"statemint_dev",
 		ChainType::Local,
@@ -136,7 +136,7 @@ fn statemint_testnet_genesis(
 pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 	StatemineChainSpec::from_genesis(
 		// Name
-		"Statemine_Development",
+		"Statemine Development",
 		// ID
 		"statemine_dev",
 		ChainType::Local,
