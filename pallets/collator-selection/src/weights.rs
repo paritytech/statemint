@@ -21,7 +21,7 @@
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;
 
-// The weight info trait for `pallet_parachain_staking`.
+// The weight info trait for `pallet_collator_selection`.
 pub trait WeightInfo {
 	fn set_invulnerables(_b: u32) -> Weight;
 	fn set_max_candidates() -> Weight;
@@ -31,7 +31,7 @@ pub trait WeightInfo {
 	fn note_author() -> Weight;
 }
 
-/// Weights for pallet_parachain_staking using the Substrate node and recommended hardware.
+/// Weights for pallet_collator_selection using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn set_invulnerables(b: u32, ) -> Weight {

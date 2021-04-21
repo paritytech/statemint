@@ -394,8 +394,8 @@ pub enum ProxyType {
 	AssetOwner,
 	/// Asset manager. Can execute calls related to asset management.
 	AssetManager,
-	// Staking proxy. Can execute calls related to collator staking.
-	Staking,
+	// Collator selection proxy. Can execute calls related to collator selection mechanism.
+	Collator,
 }
 impl Default for ProxyType {
 	fn default() -> Self {
@@ -442,8 +442,8 @@ impl InstanceFilter<Call> for ProxyType {
 				Call::Utility(..) |
 				Call::Multisig(..)
 			),
-			ProxyType::Staking => matches!(c,
-				Call::ParachainStaking(..) |
+			ProxyType::Collator => matches!(c,
+				Call::CollatorSelection(..) |
 				Call::Utility(..) |
 				Call::Multisig(..)
 			)
@@ -631,7 +631,7 @@ frame_support::ord_parameter_types! {
 	>::into_account(&frame_support::PalletId(*b"TODOTODO"));
 }
 
-impl pallet_parachain_staking::Config for Runtime {
+impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = frame_system::EnsureSignedBy<RelayChainCouncilOrigin, AccountId>;
@@ -639,7 +639,7 @@ impl pallet_parachain_staking::Config for Runtime {
 	type MaxCandidates = MaxCandidates;
 	type Epoch = Epoch;
 	type MaxInvulnerables = MaxInvulnerables;
-	type WeightInfo = weights::pallet_parachain_staking::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -662,7 +662,7 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
 		Utility: pallet_utility::{Pallet, Call, Event},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
-		ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>},
+		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
@@ -833,7 +833,7 @@ impl_runtime_apis! {
 			// add_benchmark!(params, batches, pallet_proxy, Proxy);
 			// add_benchmark!(params, batches, pallet_utility, Utility);
 			// add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, pallet_parachain_staking, ParachainStaking);
+			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

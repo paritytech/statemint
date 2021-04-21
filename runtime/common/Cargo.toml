@@ -72,9 +72,9 @@ git = 'https://github.com/paritytech/polkadot'
 branch = 'rococo-v1'
 default-features = false
 
-[dependencies.pallet-parachain-staking]
+[dependencies.pallet-collator-selection]
 default-features = false
-path = '../../pallets/parachain-staking'
+path = '../../pallets/collator-selection'
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -114,7 +114,7 @@ std = [
 	'frame-support/std',
 	'frame-executive/std',
 	'frame-system/std',
-	'pallet-parachain-staking/std',
+	'pallet-collator-selection/std',
 	'pallet-balances/std',
 	'node-primitives/std',
 	'polkadot-runtime-common/std',

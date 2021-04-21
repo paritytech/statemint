@@ -61,10 +61,10 @@ Chain.
 
 #### Can I run a collator?
 
-Yes, Statemint will have very simple staking logic that will allow one to become a collator for a
-fixed bond. Note that there are no inflationary rewards for collators; they only receive a portion
-of the transaction fees. At the time of this writing, Aura is not yet working for parachains, so
-please be patient as we scale up the number of collator slots with this new capability.
+Yes, Statemint will have very simple logic that will allow one to become a collator for a fixed
+bond. Note that there are no inflationary rewards for collators; they only receive a portion of the
+transaction fees. At the time of this writing, Aura is not yet working for parachains, so please be
+patient as we scale up the number of collator slots with this new capability.
 
 #### Will Statemint support smart contracts?
 
