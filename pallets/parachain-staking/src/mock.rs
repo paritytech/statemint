@@ -23,9 +23,8 @@ use frame_support::{
 };
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
-	testing::{Header},
+	testing::{Header, UintAuthorityId},
 };
-use sp_consensus_aura::sr25519::AuthorityId;
 use frame_system::{EnsureSignedBy};
 use frame_system as system;
 
@@ -121,7 +120,8 @@ impl pallet_timestamp::Config for Test {
 }
 
 impl pallet_aura::Config for Test {
-	type AuthorityId = AuthorityId;
+	// aura key in MockSessionKey is of type UintAuthorityId
+	type AuthorityId = UintAuthorityId;
 }
 
 ord_parameter_types! {
@@ -132,7 +132,22 @@ parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 20;
 	pub const MaxInvulnerables: u32 = 20;
-	pub const Epoch: u64 = 10;
+	pub const SessionLength: u64 = 10;
+}
+
+sp_runtime::impl_opaque_keys! {
+	pub struct MockSessionKeys {
+		// a key for aura authoring
+		pub aura: sp_runtime::testing::UintAuthorityId,
+		// and another one for other stuff.
+		pub collation: sp_runtime::testing::UintAuthorityId,
+	}
+}
+
+impl From<UintAuthorityId> for MockSessionKeys {
+	fn from(aura: sp_runtime::testing::UintAuthorityId) -> Self {
+		Self { aura, ..Default::default() }
+	}
 }
 
 impl Config for Test {
@@ -142,7 +157,9 @@ impl Config for Test {
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
-	type Epoch = Epoch;
+	type SessionLength = SessionLength;
+	type Keys = MockSessionKeys;
+	type SessionHandlers = (Aura);
 	type WeightInfo = ();
 }
 
@@ -161,11 +178,23 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		desired_candidates: 2,
 		candidacy_bond: 10,
 		invulnerables: vec![
-			1,
-			2,
+			(1, UintAuthorityId(1).into()),
+			(2, UintAuthorityId(2).into()),
 		],
 	};
 	genesis.assimilate_storage(&mut t).unwrap();
 	genesis_staking.assimilate_storage(&mut t).unwrap();
 	t.into()
+}
+
+pub(crate) fn invulnerables() -> Vec<u64> {
+	ParachainStaking::invulnerables().into_iter().map(|(i, _)| i).collect::<Vec<_>>()
+}
+
+pub(crate) fn candidates() -> Vec<u64> {
+	ParachainStaking::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>()
+}
+
+pub(crate) fn collators() -> Vec<u64> {
+	ParachainStaking::collators().into_iter().map(|(c, _)| c).collect::<Vec<_>>()
 }

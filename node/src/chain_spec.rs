@@ -12,7 +12,7 @@ pub type ChainSpec = sc_service::GenericChainSpec<statemint_runtime::GenesisConf
 pub type StatemineChainSpec = sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
-pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
 		.expect("static values are valid; qed")
 		.public()
@@ -36,13 +36,12 @@ impl Extensions {
 }
 
 type AccountPublic = <Signature as Verify>::Signer;
-
 /// Helper function to generate an account ID from seed
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
 	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
-	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
+	AccountPublic::from(get_pair_from_seed::<TPublic>(seed)).into_account()
 }
 
 pub fn statemint_development_config(id: ParaId) -> ChainSpec {
@@ -134,8 +133,6 @@ fn statemint_testnet_genesis(
 	}
 }
 
-
-
 pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 	StatemineChainSpec::from_genesis(
 		// Name
@@ -204,7 +201,6 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 	)
 }
 
-
 fn statemine_testnet_genesis(
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
@@ -226,6 +222,7 @@ fn statemine_testnet_genesis(
 		},
 		pallet_sudo: statemine_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_aura: statemine_runtime::AuraConfig { authorities: vec![] },
 		pallet_parachain_staking: statemine_runtime::ParachainStakingConfig {
 			invulnerables: vec![root_key],
 			candidacy_bond: 1 << 60,

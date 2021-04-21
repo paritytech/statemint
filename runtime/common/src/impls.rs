@@ -167,7 +167,7 @@ mod tests {
 		type PotId = PotId;
 		type MaxCandidates = MaxCandidates;
 		type MaxInvulnerables = MaxInvulnerables;
-		type Epoch = ();
+		type SessionLength = ();
 		type WeightInfo = ();
 	}
 

@@ -124,7 +124,9 @@ pub mod opaque {
 	pub type SessionHandlers = ();
 
 	impl_opaque_keys! {
-		pub struct SessionKeys {}
+		pub struct SessionKeys {
+			pub aura: Aura,
+		}
 	}
 }
 
@@ -140,7 +142,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	transaction_version: 1,
 };
 
-/// This determines the average expected block time that we are targetting.
+/// This determines the average expected block time that we are targeting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
 /// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
 /// up by `pallet_aura` to implement `fn slot_duration()`.
@@ -270,12 +272,10 @@ parameter_types! {
 }
 
 impl pallet_authorship::Config for Runtime {
-	// TODO https://github.com/paritytech/statemint/issues/23
-	// Add FindAccountFromAuthorIndex when Aura is integrated
-	type FindAuthor = ();
+	type FindAuthor = pallet_parachain_staking::FindAuthorFromIndex<Self, Aura>;
 	type UncleGenerations = UncleGenerations;
 	type FilterUncle = ();
-	type EventHandler = ();
+	type EventHandler = (ParachainStaking,);
 }
 
 parameter_types! {
@@ -615,10 +615,15 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 }
 
+type AuraId = sp_consensus_aura::sr25519::AuthorityId;
+impl pallet_aura::Config for Runtime {
+	type AuthorityId = AuraId;
+}
+
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 1000;
-	pub const Epoch: BlockNumber = 6 * HOURS;
+	pub const SessionLength: BlockNumber = 6 * HOURS;
 	pub const MaxInvulnerables: u32 = 100;
 }
 
@@ -636,8 +641,10 @@ impl pallet_parachain_staking::Config for Runtime {
 	type UpdateOrigin = frame_system::EnsureSignedBy<RelayChainCouncilOrigin, AccountId>;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
-	type Epoch = Epoch;
+	type SessionLength = SessionLength;
 	type MaxInvulnerables = MaxInvulnerables;
+	type Keys = opaque::SessionKeys;
+	type SessionHandlers = (Aura, );
 	type WeightInfo = weights::pallet_parachain_staking::WeightInfo<Runtime>;
 }
 
@@ -657,6 +664,7 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+		Aura: pallet_aura::{Pallet, Config<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
 		Utility: pallet_utility::{Pallet, Call, Event},
@@ -703,6 +711,16 @@ pub type Executive = frame_executive::Executive<
 >;
 
 impl_runtime_apis! {
+	// impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
+	// 	fn slot_duration() -> sp_consensus_aura::SlotDuration {
+	// 		sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
+	// 	}
+
+	// 	fn authorities() -> Vec<AuraId> {
+	// 		ParachainStaking::Collators()
+	// 	}
+	// }
+
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
 			VERSION

@@ -130,6 +130,12 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 version = '3.0.0'
 
+[dependencies.pallet-aura]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '3.0.0'
+
 [dependencies.serde]
 features = ['derive']
 optional = true
@@ -205,6 +211,12 @@ default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 version = '3.0.0'
+
+[dependencies.sp-consensus-aura]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '0.9.0'
 
 # Cumulus dependencies
 [dependencies.parachain-info]
@@ -317,11 +329,13 @@ std = [
 	'sp-block-builder/std',
 	'sp-transaction-pool/std',
 	'sp-inherents/std',
+	'sp-consensus-aura/std',
 	'frame-support/std',
 	'frame-executive/std',
 	'frame-system/std',
 	'frame-system-rpc-runtime-api/std',
 	'pallet-assets/std',
+	'pallet-aura/std',
 	'pallet-authorship/std',
 	'pallet-balances/std',
 	'pallet-multisig/std',

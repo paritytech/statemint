@@ -26,6 +26,13 @@
 //!
 //! All active collators are rewarded equally for being the block author, by receiving half of the
 //! block's transaction fees.
+//!
+//! This pallet also contains minimal logic for session management. A session is a period of time in
+//! which the collator set won't change, and a set of keys (denoted by `T::Keys`) are registered for
+//! the collators arbitrary operations.
+//!
+//! A new session is triggered each [`Config::SessionLength`] blocks. The new collator set is
+//! reported to any set of [`Config::SessionHandlers`] per new session.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -47,16 +54,23 @@ pub mod pallet {
 		dispatch::DispatchResultWithPostInfo,
 		pallet_prelude::*,
 		inherent::Vec,
-		traits::{Currency, ReservableCurrency, EnsureOrigin, ExistenceRequirement::KeepAlive},
-		PalletId
+		ConsensusEngineId, Parameter,
+		traits::{
+			Currency, ReservableCurrency, EnsureOrigin, FindAuthor, ExistenceRequirement::KeepAlive,
+		},
+		PalletId,
 	};
 	use frame_system::pallet_prelude::*;
 	use frame_system::Config as SystemConfig;
 	use frame_support::{
-		sp_runtime::{RuntimeDebug, traits::{AccountIdConversion, Zero, One}},
+		sp_runtime::{
+			RuntimeDebug,
+			traits::{AccountIdConversion, Zero, One, OpaqueKeys, Member},
+		},
 		weights::DispatchClass,
 	};
 	use core::ops::Div;
+	use pallet_session::SessionHandler;
 	pub use crate::weights::WeightInfo;
 
 	type BalanceOf<T> =
@@ -88,11 +102,17 @@ pub mod pallet {
 		/// Used only for benchmarking.
 		type MaxInvulnerables: Get<u32>;
 
-		/// Length of an epoch. Each epoch is merely a fixed period of time during which the
-		/// [`Collators`] will not change. At each block where `block % epoch == 0`, based on the
-		/// logic of the pallet, a new collator set is created from [`Candidates`] and
+		/// The key types that need to be registered for each collator.
+		type Keys: OpaqueKeys + Member + Parameter + Default + MaybeSerializeDeserialize;
+
+		/// Length of a fixed session. Each session is merely a fixed period of time during which
+		/// the [`Collators`] will not change. At each block where `block % session == 0`, based on
+		/// the logic of the pallet, a new collator set is created from [`Candidates`] and
 		/// [`Invulnerables`].
-		type Epoch: Get<Self::BlockNumber>;
+		type SessionLength: Get<Self::BlockNumber>;
+
+		/// Handler to receive the new collators on new session.
+		type SessionHandlers: pallet_session::SessionHandler<Self::AccountId>; // TODO: err.. we should move this elsewhere.
 
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
@@ -100,9 +120,12 @@ pub mod pallet {
 
 	/// Basic information about a collation candidate.
 	#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
-	pub struct CandidateInfo<AccountId, Balance, BlockNumber> {
+	pub struct CandidateInfo<AccountId, Balance, BlockNumber, Keys> {
 		/// Account id
 		pub who: AccountId,
+		/// Session keys of this candidate. These need to be submitted and stored next to the
+		/// candidacy.
+		pub keys: Keys,
 		/// Reserved deposit.
 		pub deposit: Balance,
 		/// Last block at which they authored a block.
@@ -113,18 +136,19 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	// The pallet's runtime storage items.
-	// https://substrate.dev/docs/en/knowledgebase/runtime/storage
-
 	/// The invulnerable, fixed collators.
 	#[pallet::storage]
 	#[pallet::getter(fn invulnerables)]
-	pub type Invulnerables<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+	pub type Invulnerables<T: Config> = StorageValue<_, Vec<(T::AccountId, T::Keys)>, ValueQuery>;
 
 	/// The (community, limited) collation candidates.
 	#[pallet::storage]
 	#[pallet::getter(fn candidates)]
-	pub type Candidates<T: Config> = StorageValue<_, Vec<CandidateInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>>, ValueQuery>;
+	pub type Candidates<T: Config> = StorageValue<
+		_,
+		Vec<CandidateInfo<T::AccountId, BalanceOf<T>, T::BlockNumber, T::Keys>>,
+		ValueQuery,
+	>;
 
 	/// Desired number of candidates.
 	///
@@ -141,11 +165,11 @@ pub mod pallet {
 	/// Final collator set that this pallet computes. Change only every [`Self::Epoch`].
 	#[pallet::storage]
 	#[pallet::getter(fn collators)]
-	pub type Collators<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+	pub type Collators<T: Config> = StorageValue<_, Vec<(T::AccountId, T::Keys)>, ValueQuery>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		pub invulnerables: Vec<T::AccountId>,
+		pub invulnerables: Vec<(T::AccountId, T::Keys)>,
 		pub candidacy_bond: BalanceOf<T>,
 		pub desired_candidates: u32,
 	}
@@ -164,6 +188,9 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
+			// TODO: prevent duplicate.
+			// TODO: ensure T::SessionHandlers has the same key types as our keys.
+
 			assert!(
 				T::MaxInvulnerables::get() >= (self.invulnerables.len() as u32),
 				"genesis invulnerables are more than T::MaxInvulnerables",
@@ -177,6 +204,8 @@ pub mod pallet {
 			<CandidacyBond<T>>::put(&self.candidacy_bond);
 			<Invulnerables<T>>::put(&self.invulnerables);
 			<Collators<T>>::put(&self.invulnerables);
+			// report genesis session keys.
+			T::SessionHandlers::on_genesis_session::<T::Keys>(&self.invulnerables);
 		}
 	}
 
@@ -201,15 +230,21 @@ pub mod pallet {
 		AlreadyCandidate,
 		NotCandidate,
 		AlreadyInvulnerable,
+		InvalidProof,
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(n: T::BlockNumber) -> Weight {
-			if (n % T::Epoch::get().max(One::one())).is_zero() {
+			if (n % T::SessionLength::get().max(One::one())).is_zero() {
 				let mut collators = Self::invulnerables();
-				collators.extend(Self::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>());
-				Self::deposit_event(Event::EpochChanged(collators.clone()));
+				collators.extend(
+					Self::candidates().into_iter().map(|c| (c.who, c.keys)).collect::<Vec<_>>(),
+				);
+				Self::deposit_event(Event::EpochChanged(
+					collators.iter().cloned().map(|(c, _)| c).collect::<Vec<_>>(),
+				));
+				T::SessionHandlers::on_new_session(true, &collators, &collators);
 				<Collators<T>>::put(collators);
 				T::DbWeight::get().reads_writes(2, 1)
 			} else {
@@ -226,7 +261,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
 		pub fn set_invulnerables(
 			origin: OriginFor<T>,
-			new: Vec<T::AccountId>,
+			new: Vec<(T::AccountId, T::Keys)>, // TODO: this is kinda strange, because the origin now is putting all of they keys at once.
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			// we trust origin calls, this is just a for more accurate benchmarking
@@ -236,7 +271,7 @@ pub mod pallet {
 				);
 			}
 			<Invulnerables<T>>::put(&new);
-			Self::deposit_event(Event::NewInvulnerables(new));
+			Self::deposit_event(Event::NewInvulnerables(new.iter().map(|(i, _)| i).cloned().collect::<Vec<_>>()));
 			Ok(().into())
 		}
 
@@ -263,26 +298,33 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
-		pub fn register_as_candidate(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+		pub fn register_as_candidate(
+			origin: OriginFor<T>,
+			keys: T::Keys,
+			proof: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
+
+			ensure!(keys.ownership_proof_is_valid(&proof), Error::<T>::InvalidProof);
 
 			// ensure we are below limit.
 			let length = <Candidates<T>>::decode_len().unwrap_or_default();
 			ensure!((length as u32) < Self::desired_candidates(), Error::<T>::TooManyCandidates);
-			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
+			ensure!(Self::invulnerables().iter().find(|(i, _)| i == &who).is_none(), Error::<T>::AlreadyInvulnerable);
 
 			let deposit = Self::candidacy_bond();
-			let incoming = CandidateInfo { who: who.clone(), deposit, last_block: None };
+			let incoming = CandidateInfo { who: who.clone(), deposit, keys, last_block: None };
 
-			let current_count = <Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
-				if candidates.into_iter().any(|candidate| candidate.who == who) {
-					Err(Error::<T>::AlreadyCandidate)?
-				} else {
-					T::Currency::reserve(&who, deposit)?;
-					candidates.push(incoming);
-					Ok(candidates.len())
-				}
-			})?;
+			let current_count =
+				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
+					if candidates.into_iter().any(|candidate| candidate.who == who) {
+						Err(Error::<T>::AlreadyCandidate)?
+					} else {
+						T::Currency::reserve(&who, deposit)?;
+						candidates.push(incoming);
+						Ok(candidates.len())
+					}
+				})?;
 
 			Self::deposit_event(Event::CandidateAdded(who, deposit));
 			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
@@ -332,6 +374,19 @@ pub mod pallet {
 
 		fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {
 			//TODO can we ignore this?
+		}
+	}
+
+	/// Provide the author account id from the something that can provide the ID. The is written to
+	/// be used next to aura's `FindAuthor<u32>`, which give you the index of the author.
+	pub struct FindAuthorFromIndex<T, F>(sp_std::marker::PhantomData<(T, F)>);
+	impl<T: Config, F: FindAuthor<u32>> FindAuthor<T::AccountId> for FindAuthorFromIndex<T, F> {
+		fn find_author<'a, I>(digests: I) -> Option<T::AccountId>
+		where
+			I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+		{
+			let index = F::find_author(digests)?;
+			<Pallet<T>>::collators().get(index as usize).map(|(acc, _)| acc).cloned()
 		}
 	}
 }
