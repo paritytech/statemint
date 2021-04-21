@@ -6,157 +6,38 @@ statemineOutput=./runtime/statemine/src/weights/
 statemintOutput=./runtime/statemint/src/weights/
 statemineChain=statemine-dev
 statemintChain=statemint-dev
+pallets=(
+	pallet_assets
+	pallet_balances
+	pallet_collator_selection
+	pallet_multisig
+	pallet_proxy
+	pallet_timestamp
+	pallet_utility
+)
 
-./target/release/statemint benchmark \
-	--chain $statemineChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_assets  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemineOutput
+for p in ${pallets[@]}
+do
+	./target/release/statemint benchmark \
+		--chain $statemineChain \
+		--execution wasm \
+		--wasm-execution compiled \
+		--pallet $p  \
+		--extrinsic '*' \
+		--steps $steps  \
+		--repeat $repeat \
+		--raw  \
+		--output $statemineOutput
 
-./target/release/statemint benchmark \
-	--chain $statemineChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_balances  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemineOutput
+	./target/release/statemint benchmark \
+		--chain $statemintChain \
+		--execution wasm \
+		--wasm-execution compiled \
+		--pallet $p  \
+		--extrinsic '*' \
+		--steps $steps  \
+		--repeat $repeat \
+		--raw  \
+		--output $statemintOutput
 
-./target/release/statemint benchmark \
-	--chain $statemineChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_multisig  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemineOutput
-
-./target/release/statemint benchmark \
-	--chain $statemineChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_proxy  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemineOutput
-
-./target/release/statemint benchmark \
-	--chain $statemineChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_utility  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemineOutput
-
-./target/release/statemint benchmark \
-	--chain $statemineChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_timestamp \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemineOutput
-
-./target/release/statemint benchmark \
-	--chain $statemineChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_collator_selection  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemineOutput
-
-./target/release/statemint benchmark \
-	--chain $statemintChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_assets  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemintOutput
-
-./target/release/statemint benchmark \
-	--chain $statemintChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_balances  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemintOutput
-
-./target/release/statemint benchmark \
-	--chain $statemintChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_multisig  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemintOutput
-
-./target/release/statemint benchmark \
-	--chain $statemintChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_proxy  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemintOutput
-
-./target/release/statemint benchmark \
-	--chain $statemintChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_utility  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemintOutput
-
-./target/release/statemint benchmark \
-	--chain $statemintChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_timestamp \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemintOutput
-
-./target/release/statemint benchmark \
-	--chain $statemintChain \
-	--execution wasm \
-	--wasm-execution compiled \
-	--pallet pallet_collator_selection  \
-	--extrinsic '*' \
-	--steps $steps  \
-	--repeat $repeat \
-	--raw  \
-	--output $statemintOutput
+done
