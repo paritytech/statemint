@@ -13,12 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Benchmarking setup for pallet-parachain-staking
+//! Benchmarking setup for pallet-collator-selection
 
 use super::*;
 
 #[allow(unused)]
-use crate::Pallet as ParachainStaking;
+use crate::Pallet as CollatorSelection;
 use sp_std::prelude::*;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller, account};
 use frame_system::{RawOrigin, EventRecord};
@@ -55,7 +55,7 @@ fn register_candidates<T: Config>(count: u32) {
 	assert!(<CandidacyBond<T>>::get() > 0u32.into(), "Bond cannot be zero!");
 	for who in candidates {
 		T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 2u32.into());
-		<ParachainStaking<T>>::register_as_candidate(RawOrigin::Signed(who).into()).unwrap();
+		<CollatorSelection<T>>::register_as_candidate(RawOrigin::Signed(who).into()).unwrap();
 	}
 }
 
@@ -68,7 +68,7 @@ benchmarks! {
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
-			<ParachainStaking<T>>::set_invulnerables(origin, new_invulnerables.clone())
+			<CollatorSelection<T>>::set_invulnerables(origin, new_invulnerables.clone())
 		);
 	}
 	verify {
@@ -80,7 +80,7 @@ benchmarks! {
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
-			<ParachainStaking<T>>::set_max_candidates(origin, max.clone())
+			<CollatorSelection<T>>::set_max_candidates(origin, max.clone())
 		);
 	}
 	verify {
@@ -92,7 +92,7 @@ benchmarks! {
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
-			<ParachainStaking<T>>::set_candidacy_bond(origin, bond.clone())
+			<CollatorSelection<T>>::set_candidacy_bond(origin, bond.clone())
 		);
 	}
 	verify {
@@ -134,16 +134,16 @@ benchmarks! {
 	// worse case is paying a non-existing candidate account.
 	note_author {
 		T::Currency::make_free_balance_be(
-			&<ParachainStaking<T>>::account_id(),
+			&<CollatorSelection<T>>::account_id(),
 			T::Currency::minimum_balance() * 2u32.into(),
 		);
 		let author = account("author", 0, SEED);
 		assert!(T::Currency::free_balance(&author) == 0u32.into());
 	}: {
-		<ParachainStaking<T> as EventHandler<_, _>>::note_author(author.clone())
+		<CollatorSelection<T> as EventHandler<_, _>>::note_author(author.clone())
 	} verify {
 		assert!(T::Currency::free_balance(&author) > 0u32.into());
 	}
 }
 
-impl_benchmark_test_suite!(ParachainStaking, crate::mock::new_test_ext(), crate::mock::Test,);
+impl_benchmark_test_suite!(CollatorSelection, crate::mock::new_test_ext(), crate::mock::Test,);

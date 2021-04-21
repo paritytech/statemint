@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::*;
-use crate as parachain_staking;
+use crate as collator_selection;
 use sp_core::H256;
 use frame_support::{
 	parameter_types, ord_parameter_types,
@@ -43,7 +43,7 @@ frame_support::construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Aura: pallet_aura::{Pallet, Call, Storage, Config<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		ParachainStaking: parachain_staking::{Pallet, Call, Storage, Event<T>},
+		CollatorSelection: collator_selection::{Pallet, Call, Storage, Event<T>},
 		Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
 	}
 );
@@ -106,7 +106,7 @@ impl pallet_authorship::Config for Test {
 	type FindAuthor = Author4;
 	type UncleGenerations = ();
 	type FilterUncle = ();
-	type EventHandler = ParachainStaking;
+	type EventHandler = CollatorSelection;
 }
 
 parameter_types! {
@@ -152,7 +152,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			(2, 200),
 		],
 	};
-	let genesis_staking = parachain_staking::GenesisConfig::<Test> {
+	let genesis_staking = collator_selection::GenesisConfig::<Test> {
 		invulnerables: vec![
 			1,
 			2,

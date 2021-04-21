@@ -1,1 +1,1 @@
-pub mod pallet_parachain_staking;
+pub mod pallet_collator_selection;

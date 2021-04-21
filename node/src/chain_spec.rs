@@ -126,7 +126,7 @@ fn statemint_testnet_genesis(
 		},
 		pallet_sudo: statemint_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: statemint_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_parachain_staking: statemint_runtime::ParachainStakingConfig { invulnerables: vec![root_key] },
+		pallet_collator_selection: statemint_runtime::CollatorSelectionConfig { invulnerables: vec![root_key] },
 	}
 }
 
@@ -222,6 +222,6 @@ fn statemine_testnet_genesis(
 		},
 		pallet_sudo: statemine_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_parachain_staking: statemine_runtime::ParachainStakingConfig { invulnerables: vec![root_key] },
+		pallet_collator_selection: statemine_runtime::CollatorSelectionConfig { invulnerables: vec![root_key] },
 	}
 }
