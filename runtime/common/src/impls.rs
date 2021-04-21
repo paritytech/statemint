@@ -24,14 +24,14 @@ pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<<T as fr
 pub struct ToStakingPot<R>(sp_std::marker::PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for ToStakingPot<R>
 where
-	R: pallet_balances::Config + pallet_parachain_staking::Config,
+	R: pallet_balances::Config + pallet_collator_selection::Config,
 	<R as frame_system::Config>::AccountId: From<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::AccountId: Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
 		let numeric_amount = amount.peek();
-		let staking_pot = <pallet_parachain_staking::Pallet<R>>::account_id();
+		let staking_pot = <pallet_collator_selection::Pallet<R>>::account_id();
 		<pallet_balances::Pallet<R>>::resolve_creating(
 			&staking_pot,
 			amount,
@@ -46,7 +46,7 @@ where
 pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
 where
-	R: pallet_balances::Config + pallet_parachain_staking::Config,
+	R: pallet_balances::Config + pallet_collator_selection::Config,
 	<R as frame_system::Config>::AccountId: From<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::AccountId: Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
@@ -90,7 +90,7 @@ mod tests {
 		{
 			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-			ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Event<T>},
+			CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>},
 		}
 	);
 
@@ -160,7 +160,7 @@ mod tests {
 		pub const MaxInvulnerables: u32 = 20;
 	}
 
-	impl pallet_parachain_staking::Config for Test {
+	impl pallet_collator_selection::Config for Test {
 		type Event = Event;
 		type Currency = Balances;
 		type UpdateOrigin = EnsureRoot<AccountId>;
@@ -200,7 +200,7 @@ mod tests {
 			DealWithFees::on_unbalanceds(vec![fee, tip].into_iter());
 
 			// Author gets 100% of tip and 100% of fee = 30
-			assert_eq!(Balances::free_balance(ParachainStaking::account_id()), 30);
+			assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 30);
 		});
 	}
 }

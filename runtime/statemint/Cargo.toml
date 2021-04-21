@@ -274,14 +274,26 @@ git = 'https://github.com/paritytech/polkadot'
 branch = 'rococo-v1'
 default-features = false
 
-[dependencies.pallet-parachain-staking]
+[dependencies.pallet-collator-selection]
 default-features = false
-path = '../../pallets/parachain-staking'
+path = '../../pallets/collator-selection'
 
 [dependencies.runtime-common]
 default-features = false
 version = "0.8.30"
 path = '../common'
+
+[dependencies.pallet-aura]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '3.0.0'
+
+[dependencies.sp-consensus-aura]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '0.9.0'
 
 
 [features]
@@ -301,11 +313,13 @@ runtime-benchmarks = [
 	'pallet-utility/runtime-benchmarks',
 	'pallet-timestamp/runtime-benchmarks',
 	'pallet-xcm/runtime-benchmarks',
-	'pallet-parachain-staking/runtime-benchmarks',
+	'pallet-collator-selection/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
 	'serde',
+	'sp-consensus-aura/std',
+	'pallet-aura/std',
 	'sp-api/std',
 	'sp-std/std',
 	'sp-io/std',
@@ -333,7 +347,7 @@ std = [
 	'pallet-sudo/std',
 	'pallet-xcm/std',
 	'pallet-transaction-payment/std',
-	'pallet-parachain-staking/std',
+	'pallet-collator-selection/std',
 	'node-primitives/std',
 	'parachain-info/std',
 	'cumulus-pallet-parachain-system/std',

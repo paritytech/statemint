@@ -13,19 +13,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Parachain staking pallet.
+//! Collator Selection pallet.
 //!
 //! A pallet to manage collators in a parachain.
 //!
-//! The final [`Collators`] are aggregated from two individual lists. 1. [`Invulnerables`], a set of
-//! governance controlled collators. These accounts will always be collators. 2. [`Candidates`]:
-//! these are *candidates to the collation task* and may or may not be elected as a final collator.
+//! ## Overview
 //!
-//! The current implementation resolves congestion of [`Candidates`] by a first-come-first-serve
+//! The Collator Selection pallet manages the collators of a parachain. **Collation is _not_ a
+//! secure activity** and this pallet does not implement any game-theoretic mechanisms to meet BFT
+//! safety assumptions of the chosen set.
+//!
+//! ## Terminology
+//!
+//! - Collator: A parachain block producer.
+//! - Bond: An amount of `Balance` _reserved_ for candidate registration.
+//! - Invulnerable: An account guaranteed to be in the collator set.
+//!
+//! ## Implementation
+//!
+//! The final [`Collators`] are aggregated from two individual lists:
+//!
+//! 1. [`Invulnerables`]: a set of collators appointed by governance. These accounts will always be
+//!    collators.
+//! 2. [`Candidates`]: these are *candidates to the collation task* and may or may not be elected as
+//!    a final collator.
+//!
+//! The current implementation resolves congestion of [`Candidates`] in a first-come-first-serve
 //! manner.
 //!
-//! All active collators are rewarded equally for being the block author, by receiving half of the
-//! block's transaction fees.
+//! ### Session
 //!
 //! This pallet also contains minimal logic for session management. A session is a period of time in
 //! which the collator set won't change, and a set of keys (denoted by `T::Keys`) are registered for
@@ -33,6 +49,19 @@
 //!
 //! A new session is triggered each [`Config::SessionLength`] blocks. The new collator set is
 //! reported to any set of [`Config::SessionHandlers`] per new session.
+//!
+//! ### Rewards
+//!
+//! The Collator Selection pallet maintains an on-chain account (the "Pot"). In each block, the
+//! collator who authored it receives:
+//!
+//! - Half the value of the Pot.
+//! - Half the value of the transaction fees within the block. The other half of the transaction
+//!   fees are deposited into the Pot.
+//!
+//! Note: Eventually the Pot distribution may be modified as discussed in
+//! [this issue](https://github.com/paritytech/statemint/issues/21#issuecomment-810481073).
+//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -88,7 +117,7 @@ pub mod pallet {
 		/// Origin that can dictate updating parameters of this pallet.
 		type UpdateOrigin: EnsureOrigin<Self::Origin>;
 
-		/// Account Identifier using which the internal treasury account is generated.
+		/// Account Identifier from which the internal Pot is generated.
 		type PotId: Get<PalletId>;
 
 		/// Maximum number of candidates that we should have. This is used for benchmarking and is not

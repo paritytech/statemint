@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::*;
-use crate as parachain_staking;
+use crate as collator_selection;
 use sp_core::H256;
 use frame_support::{
 	parameter_types, ord_parameter_types,
@@ -42,7 +42,7 @@ frame_support::construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Aura: pallet_aura::{Pallet, Call, Storage, Config<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		ParachainStaking: parachain_staking::{Pallet, Call, Storage, Event<T>},
+		CollatorSelection: collator_selection::{Pallet, Call, Storage, Event<T>},
 		Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
 	}
 );
@@ -105,7 +105,7 @@ impl pallet_authorship::Config for Test {
 	type FindAuthor = Author4;
 	type UncleGenerations = ();
 	type FilterUncle = ();
-	type EventHandler = ParachainStaking;
+	type EventHandler = CollatorSelection;
 }
 
 parameter_types! {
@@ -174,7 +174,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			(5, 100),
 		],
 	};
-	let genesis_staking = parachain_staking::GenesisConfig::<Test> {
+	let genesis_collator_selection = collator_selection::GenesisConfig::<Test> {
 		desired_candidates: 2,
 		candidacy_bond: 10,
 		invulnerables: vec![
@@ -183,18 +183,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		],
 	};
 	genesis.assimilate_storage(&mut t).unwrap();
-	genesis_staking.assimilate_storage(&mut t).unwrap();
+	genesis_collator_selection.assimilate_storage(&mut t).unwrap();
 	t.into()
 }
 
 pub(crate) fn invulnerables() -> Vec<u64> {
-	ParachainStaking::invulnerables().into_iter().map(|(i, _)| i).collect::<Vec<_>>()
+	CollatorSelection::invulnerables().into_iter().map(|(i, _)| i).collect::<Vec<_>>()
 }
 
 pub(crate) fn candidates() -> Vec<u64> {
-	ParachainStaking::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>()
+	CollatorSelection::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>()
 }
 
 pub(crate) fn collators() -> Vec<u64> {
-	ParachainStaking::collators().into_iter().map(|(c, _)| c).collect::<Vec<_>>()
+	CollatorSelection::collators().into_iter().map(|(c, _)| c).collect::<Vec<_>>()
 }

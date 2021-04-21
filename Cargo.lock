@@ -4559,6 +4559,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-collator-selection"
+version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-aura",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "serde",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-collective"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=rococo-v1#68cfc326fa0e3d96d0d92509e4db1a104b9da9bb"
@@ -4833,28 +4855,6 @@ dependencies = [
  "parity-scale-codec",
  "sp-runtime",
  "sp-staking",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-parachain-staking"
-version = "3.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-aura",
- "pallet-authorship",
- "pallet-balances",
- "pallet-session",
- "pallet-timestamp",
- "parity-scale-codec",
- "serde",
- "sp-consensus-aura",
- "sp-core",
- "sp-io",
- "sp-runtime",
  "sp-std",
 ]
 
@@ -7197,7 +7197,7 @@ dependencies = [
  "node-primitives",
  "pallet-authorship",
  "pallet-balances",
- "pallet-parachain-staking",
+ "pallet-collator-selection",
  "parity-scale-codec",
  "polkadot-primitives",
  "polkadot-runtime-common",
@@ -9377,8 +9377,8 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-collator-selection",
  "pallet-multisig",
- "pallet-parachain-staking",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
@@ -9483,10 +9483,11 @@ dependencies = [
  "hex-literal 0.3.1",
  "node-primitives",
  "pallet-assets",
+ "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-collator-selection",
  "pallet-multisig",
- "pallet-parachain-staking",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
@@ -9505,6 +9506,7 @@ dependencies = [
  "smallvec 1.6.1",
  "sp-api",
  "sp-block-builder",
+ "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
  "sp-io",
