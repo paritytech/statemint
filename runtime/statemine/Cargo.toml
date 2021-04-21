@@ -295,6 +295,12 @@ default-features = false
 version = "0.8.30"
 path = '../common'
 
+[dependencies.pallet-session]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '3.0.0'
+
 
 [features]
 default = ['std']
@@ -340,6 +346,7 @@ std = [
 	'pallet-balances/std',
 	'pallet-multisig/std',
 	'pallet-proxy/std',
+	'pallet-session/std',
 	'pallet-utility/std',
 	'pallet-randomness-collective-flip/std',
 	'pallet-transaction-payment-rpc-runtime-api/std',

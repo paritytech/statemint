@@ -4577,7 +4577,9 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-staking",
  "sp-std",
+ "sp-tracing",
 ]
 
 [[package]]
@@ -9381,6 +9383,7 @@ dependencies = [
  "pallet-multisig",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
+ "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -9490,6 +9493,7 @@ dependencies = [
  "pallet-multisig",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
+ "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",

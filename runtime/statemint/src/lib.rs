@@ -124,7 +124,9 @@ pub mod opaque {
 	pub type SessionHandlers = ();
 
 	impl_opaque_keys! {
-		pub struct SessionKeys {}
+		pub struct SessionKeys {
+			pub aura: Aura,
+		}
 	}
 }
 
@@ -616,6 +618,27 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 }
 
+parameter_types! {
+	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
+	pub const Period: u32 = 6 * HOURS;
+	pub const Offset: u32 = 0;
+}
+
+impl pallet_session::Config for Runtime {
+	type Event = Event;
+	type ValidatorId = <Self as frame_system::Config>::AccountId;
+	// we don't have stash and controller, thus we don't need the convert as well.
+	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
+	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+	type SessionManager = CollatorSelection;
+	// Essentially just Aura, but lets be pedantic.
+	type SessionHandler = <opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
+	type Keys = opaque::SessionKeys;
+	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
+	type WeightInfo = ();
+}
+
 type AuraId = sp_consensus_aura::sr25519::AuthorityId;
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
@@ -642,10 +665,7 @@ impl pallet_collator_selection::Config for Runtime {
 	type UpdateOrigin = frame_system::EnsureSignedBy<RelayChainCouncilOrigin, AccountId>;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
-	type SessionLength = SessionLength;
 	type MaxInvulnerables = MaxInvulnerables;
-	type Keys = opaque::SessionKeys;
-	type SessionHandlers = (Aura, );
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
@@ -665,6 +685,7 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
 		Aura: pallet_aura::{Pallet, Config<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},

@@ -289,6 +289,12 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 version = '3.0.0'
 
+[dependencies.pallet-session]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '3.0.0'
+
 [dependencies.sp-consensus-aura]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -345,6 +351,7 @@ std = [
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-timestamp/std',
 	'pallet-sudo/std',
+	'pallet-session/std',
 	'pallet-xcm/std',
 	'pallet-transaction-payment/std',
 	'pallet-collator-selection/std',
