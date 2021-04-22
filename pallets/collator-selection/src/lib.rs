@@ -197,7 +197,7 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 
-			let duplicate_invulnerables = self.invulnerables.iter().map(|x| x).cloned().collect::<std::collections::BTreeSet<_>>();
+			let duplicate_invulnerables = self.invulnerables.iter().collect::<std::collections::BTreeSet<_>>();
 			assert!(duplicate_invulnerables.len()  == self.invulnerables.len(), "duplicate invulnerables in genesis.");
 
 			assert!(
