@@ -196,7 +196,9 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
-			// TODO: prevent duplicate.
+
+			let duplicate_invulnerables = self.invulnerables.iter().map(|x| x).cloned().collect::<std::collections::BTreeSet<_>>();
+			assert!(duplicate_invulnerables.len()  == self.invulnerables.len(), "duplicate invulnerables in genesis.");
 
 			assert!(
 				T::MaxInvulnerables::get() >= (self.invulnerables.len() as u32),
@@ -337,7 +339,7 @@ pub mod pallet {
 			collators.extend(
 				Self::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>(),
 			);
-			dbg!(&collators);
+			// dbg!(&collators);
 			collators
 		}
 	}

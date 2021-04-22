@@ -12,11 +12,11 @@
 // // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // // See the License for the specific language governing permissions and
 // // limitations under the License.
-
+use crate as collator_selection;
 use crate::{mock::*, Error, CandidateInfo};
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::{OnInitialize, Currency},
+	traits::{OnInitialize, Currency, GenesisBuild},
 };
 use sp_runtime::traits::BadOrigin;
 use pallet_balances::Error as BalancesError;
@@ -247,4 +247,22 @@ fn session_management_works() {
 		// changed are now reflected to session handlers.
 		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3]);
 	});
+}
+
+
+#[test]
+#[should_panic = "duplicate invulnerables in genesis."]
+fn cannot_set_genesis_value_twice() {
+	sp_tracing::try_init_simple();
+	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let invulnerables = vec![1, 1];
+
+	let collator_selection = collator_selection::GenesisConfig::<Test> {
+		desired_candidates: 2,
+		candidacy_bond: 10,
+		invulnerables,
+	};
+	// collator selection must be initialized before session.
+	collator_selection.assimilate_storage(&mut t).unwrap();
+
 }
