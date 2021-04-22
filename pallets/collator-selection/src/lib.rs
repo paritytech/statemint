@@ -337,8 +337,8 @@ pub mod pallet {
 			collators.extend(
 				Self::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>(),
 			);
+			dbg!(&collators);
 			collators
-			// <Collators<T>>::put(collators);
 		}
 	}
 

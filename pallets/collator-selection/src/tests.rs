@@ -218,21 +218,33 @@ fn session_management_works() {
 		initialize_to_block(1);
 
 		assert_eq!(SessionChangeBlock::get(), 0);
-		assert_eq!(Collators::get(), vec![1, 2]);
+		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
 
 		initialize_to_block(4);
 
 		assert_eq!(SessionChangeBlock::get(), 0);
-		assert_eq!(Collators::get(), vec![1, 2]);
+		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
 
 		// add a new collator
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
 
 		// session won't see this.
-		assert_eq!(Collators::get(), vec![1, 2]);
+		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
+		// but we have a new candidate.
+		assert_eq!(CollatorSelection::candidates().len(), 1);
 
 		initialize_to_block(10);
 		assert_eq!(SessionChangeBlock::get(), 10);
-		assert_eq!(Collators::get(), vec![1, 2, 3]);
+		// pallet-session has 1 session delay; current validators are the same.
+		assert_eq!(Session::validators(), vec![1, 2]);
+		// queued ones are changed, and now we have 3.
+		assert_eq!(Session::queued_keys().len(), 3);
+		// session handlers (aura, et. al.) cannot see this yet.
+		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
+
+		initialize_to_block(20);
+		assert_eq!(SessionChangeBlock::get(), 20);
+		// changed are now reflected to session handlers.
+		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3]);
 	});
 }

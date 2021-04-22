@@ -122,27 +122,24 @@ impl pallet_timestamp::Config for Test {
 }
 
 impl pallet_aura::Config for Test {
-	// aura key in MockSessionKey is of type UintAuthorityId
-	type AuthorityId = UintAuthorityId;
+	type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
 }
 
 sp_runtime::impl_opaque_keys! {
 	pub struct MockSessionKeys {
 		// a key for aura authoring
-		pub aura: sp_runtime::testing::UintAuthorityId,
-		// and another one for other stuff.
-		pub collation: sp_runtime::testing::UintAuthorityId,
+		pub aura: UintAuthorityId,
 	}
 }
 
 impl From<UintAuthorityId> for MockSessionKeys {
 	fn from(aura: sp_runtime::testing::UintAuthorityId) -> Self {
-		Self { aura, ..Default::default() }
+		Self { aura }
 	}
 }
 
 parameter_types! {
-	pub static Collators: Vec<u64> = vec![];
+	pub static SessionHandlerCollators: Vec<u64> = vec![];
 	pub static SessionChangeBlock: u64 = 0;
 }
 
@@ -150,12 +147,12 @@ pub struct TestSessionHandler;
 impl pallet_session::SessionHandler<u64> for TestSessionHandler {
 	const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] = &[UintAuthorityId::ID];
 	fn on_genesis_session<Ks: OpaqueKeys>(keys: &[(u64, Ks)]) {
-		Collators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 	fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
 		SessionChangeBlock::set(System::block_number());
 		dbg!(keys.len());
-		Collators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 	fn on_before_session_ending() {}
 	fn on_disabled(_: usize) {}
@@ -203,7 +200,16 @@ impl Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	sp_tracing::try_init_simple();
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	let genesis = pallet_balances::GenesisConfig::<Test> {
+	let invulnerables = vec![1, 2];
+	let keys = invulnerables.iter().map(|i|
+		(
+			*i,
+			*i,
+			MockSessionKeys { aura: UintAuthorityId(*i) },
+		)
+	).collect::<Vec<_>>();
+
+	let balances = pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
 			(1, 100),
 			(2, 100),
@@ -212,16 +218,16 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			(5, 100),
 		],
 	};
-	let genesis_collator_selection = collator_selection::GenesisConfig::<Test> {
+	let collator_selection = collator_selection::GenesisConfig::<Test> {
 		desired_candidates: 2,
 		candidacy_bond: 10,
-		invulnerables: vec![
-			1,
-			2,
-		],
+		invulnerables,
 	};
-	genesis.assimilate_storage(&mut t).unwrap();
-	genesis_collator_selection.assimilate_storage(&mut t).unwrap();
+	let session = pallet_session::GenesisConfig::<Test> { keys };
+	balances.assimilate_storage(&mut t).unwrap();
+	// collator selection must be initialized before session.
+	collator_selection.assimilate_storage(&mut t).unwrap();
+	session.assimilate_storage(&mut t).unwrap();
 
 	t.into()
 }
