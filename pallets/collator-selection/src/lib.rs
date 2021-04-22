@@ -137,7 +137,7 @@ pub mod pallet {
 	/// Basic information about a collation candidate.
 	#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 	pub struct CandidateInfo<AccountId, Balance, BlockNumber> {
-		/// Account id
+		/// Account identifier. 
 		pub who: AccountId,
 		/// Reserved deposit.
 		pub deposit: Balance,
