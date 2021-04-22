@@ -137,7 +137,7 @@ pub mod pallet {
 	/// Basic information about a collation candidate.
 	#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 	pub struct CandidateInfo<AccountId, Balance, BlockNumber> {
-		/// Account identifier. 
+		/// Account identifier.
 		pub who: AccountId,
 		/// Reserved deposit.
 		pub deposit: Balance,
@@ -339,7 +339,7 @@ pub mod pallet {
 			collators.extend(
 				Self::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>(),
 			);
-			// dbg!(&collators);
+			dbg!(&collators);
 			collators
 		}
 	}

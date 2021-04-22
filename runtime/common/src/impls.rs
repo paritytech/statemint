@@ -53,10 +53,6 @@ where
 {
 	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance<R>>) {
 		if let Some(mut fees) = fees_then_tips.next() {
-			// for fees and tips, need simple staking pallet to finish
-			// all the fees should go to the staking pallet (its on_finalize will give half to the author)
-			// all of the tip should go to the author
-			// TODO https://github.com/paritytech/statemint/issues/9
 			if let Some(tips) = fees_then_tips.next() {
 				tips.merge_into(&mut fees);
 			}
