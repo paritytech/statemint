@@ -124,6 +124,8 @@ fn statemint_testnet_genesis(
 				.collect(),
 		},
 		pallet_sudo: statemint_runtime::SudoConfig { key: root_key.clone() },
+		pallet_aura: Default::default(),
+		pallet_session: Default::default(),
 		parachain_info: statemint_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_collator_selection: statemint_runtime::CollatorSelectionConfig {
 			invulnerables: vec![root_key],
@@ -221,8 +223,9 @@ fn statemine_testnet_genesis(
 				.collect(),
 		},
 		pallet_sudo: statemine_runtime::SudoConfig { key: root_key.clone() },
+		pallet_aura: Default::default(),
+		pallet_session: Default::default(),
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_aura: statemine_runtime::AuraConfig { authorities: vec![] },
 		pallet_collator_selection: statemine_runtime::CollatorSelectionConfig {
 			invulnerables: vec![root_key],
 			candidacy_bond: 1 << 60,
