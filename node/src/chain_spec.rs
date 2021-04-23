@@ -44,6 +44,13 @@ pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
 	get_pair_from_seed::<AuraId>(seed)
 }
 
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+pub fn statemint_session_keys(keys: AuraId) -> statemint_runtime::opaque::SessionKeys {
+	statemint_runtime::opaque::SessionKeys { aura: keys }
+}
+
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
@@ -166,14 +173,20 @@ fn statemint_testnet_genesis(
 		pallet_sudo: statemint_runtime::SudoConfig { key: root_key },
 		parachain_info: statemint_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_collator_selection: statemint_runtime::CollatorSelectionConfig {
-			invulnerables: vec![], // TODO
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: STATEMINT_ED * 16,
 			..Default::default()
 		},
-		pallet_session: Default::default(),
-		pallet_aura: statemint_runtime::AuraConfig {
-			authorities: invulnerables.iter().cloned().map(|(_, aura)| aura).collect(),
+		pallet_session: statemint_runtime::SessionConfig {
+			keys: invulnerables.iter().cloned().map(|(acc, aura)| (
+				acc.clone(), // account id
+				acc.clone(), // validator id
+				statemint_session_keys(aura), // session keys
+			)).collect()
 		},
+		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
+		// of this.
+		pallet_aura: Default::default(),
 	}
 }
 
