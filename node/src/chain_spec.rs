@@ -51,6 +51,13 @@ pub fn statemint_session_keys(keys: AuraId) -> statemint_runtime::opaque::Sessio
 	statemint_runtime::opaque::SessionKeys { aura: keys }
 }
 
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+pub fn statemine_session_keys(keys: AuraId) -> statemine_runtime::opaque::SessionKeys {
+	statemine_runtime::opaque::SessionKeys { aura: keys }
+}
+
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
@@ -199,13 +206,20 @@ pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 		ChainType::Local,
 		move || {
 			statemine_testnet_genesis(
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice"),
+					)
+				],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				id,
 			)
 		},
@@ -229,21 +243,19 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 		ChainType::Local,
 		move || {
 			statemine_testnet_genesis(
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+					(
+						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
+						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").unchecked_into()
+					)
 				],
+				vec![
+					hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
+					hex!("c8f226d8a15b8d23241596862ce10d2db8359f816d45efb01c65524725543219").into(),
+					hex!("dee1e2a19c2f7ddee43e66373d58768c6dc9ba4424af6101a5497b2e4a945371").into(),
+					hex!("6a9099150aa91fd6cb5ec1a497e0d6b0e14cca7a863ed5608f6aa6a4970c6169").into(),
+				],
+				hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
 				id,
 			)
 		},
@@ -259,8 +271,9 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 }
 
 fn statemine_testnet_genesis(
-	root_key: AccountId,
+	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
+	root_key: AccountId,
 	id: ParaId,
 ) -> statemine_runtime::GenesisConfig {
 	statemine_runtime::GenesisConfig {
@@ -280,11 +293,17 @@ fn statemine_testnet_genesis(
 		pallet_sudo: statemine_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_collator_selection: statemine_runtime::CollatorSelectionConfig {
-			invulnerables: vec![root_key],
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: STATEMINE_ED * 16,
 			..Default::default()
 		},
-		pallet_session: Default::default(),
+		pallet_session: statemine_runtime::SessionConfig {
+			keys: invulnerables.iter().cloned().map(|(acc, aura)| (
+				acc.clone(), // account id
+				acc.clone(), // validator id
+				statemine_session_keys(aura), // session keys
+			)).collect()
+		},
 		pallet_aura: Default::default(),
 	}
 }
