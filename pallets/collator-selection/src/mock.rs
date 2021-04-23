@@ -185,6 +185,7 @@ parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 20;
 	pub const MaxInvulnerables: u32 = 20;
+	pub const BootCheck: u64 = 5;
 }
 
 impl Config for Test {
@@ -194,6 +195,7 @@ impl Config for Test {
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
+	type BootCheck = BootCheck;
 	type WeightInfo = ();
 }
 

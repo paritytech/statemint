@@ -729,15 +729,15 @@ pub type Executive = frame_executive::Executive<
 >;
 
 impl_runtime_apis! {
-	// impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
-	// 	fn slot_duration() -> sp_consensus_aura::SlotDuration {
-	// 		sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
-	// 	}
+	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
+		fn slot_duration() -> sp_consensus_aura::SlotDuration {
+			sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
+		}
 
-	// 	fn authorities() -> Vec<AuraId> {
-	// 		CollatorSelection::Collators()
-	// 	}
-	// }
+		fn authorities() -> Vec<AuraId> {
+			Aura::authorities()
+		}
+	}
 
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {

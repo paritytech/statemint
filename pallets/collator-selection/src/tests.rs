@@ -122,7 +122,7 @@ fn cannot_register_dupe_candidate() {
 	new_test_ext().execute_with(|| {
 		// can add 3 as candidate
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
-		let addition = CandidateInfo { who: 3, deposit: 10, last_block: None };
+		let addition = CandidateInfo { who: 3, deposit: 10, last_block: 0 };
 		assert_eq!(CollatorSelection::candidates(), vec![addition]);
 		assert_eq!(Balances::free_balance(3), 90);
 
@@ -201,12 +201,21 @@ fn authorship_event_handler() {
 
 		// 4 is the default author.
 		assert_eq!(Balances::free_balance(4), 100);
-
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
 		// triggers `note_author`
 		Authorship::on_initialize(1);
 
+
+		let collator = CandidateInfo {
+			who: 4,
+			deposit: 10,
+			last_block: 0
+		};
+
+		assert_eq!(CollatorSelection::candidates(), vec![collator]);
+
 		// half of the pot goes to the collator who's the author (4 in tests).
-		assert_eq!(Balances::free_balance(4), 150);
+		assert_eq!(Balances::free_balance(4), 140);
 		// half stays.
 		assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 50);
 	});
@@ -215,6 +224,10 @@ fn authorship_event_handler() {
 #[test]
 fn session_management_works() {
 	new_test_ext().execute_with(|| {
+		// add a new collator
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
+
 		initialize_to_block(1);
 
 		assert_eq!(SessionChangeBlock::get(), 0);
@@ -225,18 +238,21 @@ fn session_management_works() {
 		assert_eq!(SessionChangeBlock::get(), 0);
 		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
 
-		// add a new collator
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
 
 		// session won't see this.
 		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
 		// but we have a new candidate.
-		assert_eq!(CollatorSelection::candidates().len(), 1);
+		assert_eq!(CollatorSelection::candidates().len(), 2);
+
+		println!("${:?}", CollatorSelection::candidates());
+		println!("${:?}", CollatorSelection::invulnerables());
 
 		initialize_to_block(10);
 		assert_eq!(SessionChangeBlock::get(), 10);
 		// pallet-session has 1 session delay; current validators are the same.
 		assert_eq!(Session::validators(), vec![1, 2]);
+		println!("${:?}", CollatorSelection::candidates());
+		println!("${:?}", CollatorSelection::invulnerables());
 		// queued ones are changed, and now we have 3.
 		assert_eq!(Session::queued_keys().len(), 3);
 		// session handlers (aura, et. al.) cannot see this yet.

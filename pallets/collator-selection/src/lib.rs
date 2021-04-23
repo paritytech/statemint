@@ -130,6 +130,8 @@ pub mod pallet {
 		/// Used only for benchmarking.
 		type MaxInvulnerables: Get<u32>;
 
+		type BootCheck: Get<Self::BlockNumber>;
+
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -142,7 +144,7 @@ pub mod pallet {
 		/// Reserved deposit.
 		pub deposit: Balance,
 		/// Last block at which they authored a block.
-		pub last_block: Option<BlockNumber>,
+		pub last_block: BlockNumber,
 	}
 
 	#[pallet::pallet]
@@ -174,6 +176,12 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn candidacy_bond)]
 	pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+
+	/// Desired blocks until check if bootable.
+	#[pallet::storage]
+	#[pallet::getter(fn boot_block)]
+	pub type BootBlock<T> = StorageValue<_, <T as frame_system::Config>::BlockNumber, ValueQuery>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -292,7 +300,7 @@ pub mod pallet {
 			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
 
 			let deposit = Self::candidacy_bond();
-			let incoming = CandidateInfo { who: who.clone(), deposit, last_block: None };
+			let incoming = CandidateInfo { who: who.clone(), deposit, last_block: frame_system::Pallet::<T>::block_number() };
 
 			let current_count =
 				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
@@ -313,12 +321,7 @@ pub mod pallet {
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 
-			let current_count = <Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
-				let index = candidates.iter().position(|candidate| candidate.who == who).ok_or(Error::<T>::NotCandidate)?;
-				T::Currency::unreserve(&who, candidates[index].deposit);
-				candidates.remove(index);
-				Ok(candidates.len())
-			})?;
+			let current_count = Self::try_remove_candidate(&who)?;
 
 			Self::deposit_event(Event::CandidateRemoved(who));
 			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
@@ -331,14 +334,34 @@ pub mod pallet {
 			T::PotId::get().into_account()
 		}
 
+		pub fn try_remove_candidate(who: &T::AccountId) -> Result<usize, DispatchError> {
+			let current_count = <Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
+				let index = candidates.iter().position(|candidate| candidate.who == *who).ok_or(Error::<T>::NotCandidate)?;
+				T::Currency::unreserve(&who, candidates[index].deposit);
+				candidates.remove(index);
+				Ok(candidates.len())
+			});
+			current_count
+		}
+
 		/// Assemble the current set of candidates and invulnerables into the next collator set.
 		///
 		/// This is done on the fly, as frequent as we are told to do so, as the session manager.
 		pub fn assemble_collators() -> Vec<T::AccountId> {
 			let mut collators = Self::invulnerables();
+			let boot_block = Self::boot_block();
 			collators.extend(
-				Self::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>(),
+				Self::candidates().into_iter().filter_map(|c| {
+					if c.last_block > boot_block {
+						Some(c.who)
+					} else {
+						let _ = Self::try_remove_candidate(&c.who);
+						None
+					}
+
+				}).collect::<Vec<_>>(),
 			);
+			<BootBlock<T>>::put(boot_block + T::BootCheck::get());
 			dbg!(&collators);
 			collators
 		}
@@ -356,7 +379,12 @@ pub mod pallet {
 			// `reward` is half of treasury account, this should never fail.
 			let _success = T::Currency::transfer(&treasury, &author, reward, KeepAlive);
 			debug_assert!(_success.is_ok());
-
+			<Candidates<T>>::mutate(|candidates| {
+				if candidates.len() > 0 {
+				let index: usize = candidates.iter().position(|candidate| candidate.who == author).unwrap_or_default();
+					candidates[index].last_block = frame_system::Pallet::<T>::block_number();
+				}
+			});
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
 				T::WeightInfo::note_author(),
 				DispatchClass::Mandatory,
