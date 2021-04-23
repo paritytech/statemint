@@ -176,7 +176,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
 
-const EXISTENTIAL_DEPOSIT: Balance = 100 * CENTS;
+pub const EXISTENTIAL_DEPOSIT: Balance = 100 * CENTS;
 
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;

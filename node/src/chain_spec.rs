@@ -13,24 +13,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.use cumulus_primitives_core::ParaId;
 
+use cumulus_primitives_core::ParaId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{sr25519, crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use statemint_runtime::{AccountId, Signature};
-use statemine_runtime;
+use statemint_runtime::{AccountId, Signature, Balance};
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use hex_literal::hex;
-use polkadot_service::ParaId;
+
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
 pub type StatemineChainSpec = sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
+
+const STATEMINT_ED: Balance = statemine_runtime::EXISTENTIAL_DEPOSIT;
+const STATEMINE_ED: Balance = statemine_runtime::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
 		.expect("static values are valid; qed")
 		.public()
+}
+
+/// Generate collator keys from seed.
+///
+/// This function's return type must always match the session keys of the chain in tuple format.
+pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
+	get_pair_from_seed::<AuraId>(seed)
 }
 
 /// The extensions for the [`ChainSpec`].
@@ -68,13 +79,20 @@ pub fn statemint_development_config(id: ParaId) -> ChainSpec {
 		ChainType::Local,
 		move || {
 			statemint_testnet_genesis(
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice"),
+					)
+				],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				id,
 			)
 		},
@@ -98,13 +116,19 @@ pub fn statemint_local_config(id: ParaId) -> ChainSpec {
 		ChainType::Local,
 		move || {
 			statemint_testnet_genesis(
-				hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
+				vec![
+					(
+						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
+						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").unchecked_into()
+					)
+				],
 				vec![
 					hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
 					hex!("c8f226d8a15b8d23241596862ce10d2db8359f816d45efb01c65524725543219").into(),
 					hex!("dee1e2a19c2f7ddee43e66373d58768c6dc9ba4424af6101a5497b2e4a945371").into(),
 					hex!("6a9099150aa91fd6cb5ec1a497e0d6b0e14cca7a863ed5608f6aa6a4970c6169").into(),
 				],
+				hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
 				id,
 			)
 		},
@@ -120,8 +144,9 @@ pub fn statemint_local_config(id: ParaId) -> ChainSpec {
 }
 
 fn statemint_testnet_genesis(
-	root_key: AccountId,
+	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
+	root_key: AccountId,
 	id: ParaId,
 ) -> statemint_runtime::GenesisConfig {
 	statemint_runtime::GenesisConfig {
@@ -135,18 +160,20 @@ fn statemint_testnet_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, 1 << 60))
+				.map(|k| (k, STATEMINT_ED * 4096))
 				.collect(),
 		},
-		pallet_sudo: statemint_runtime::SudoConfig { key: root_key.clone() },
+		pallet_sudo: statemint_runtime::SudoConfig { key: root_key },
 		parachain_info: statemint_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_collator_selection: statemint_runtime::CollatorSelectionConfig {
-			invulnerables: vec![root_key],
-			candidacy_bond: 1 << 60,
+			invulnerables: vec![], // TODO
+			candidacy_bond: STATEMINT_ED * 16,
 			..Default::default()
 		},
 		pallet_session: Default::default(),
-		pallet_aura: Default::default(),
+		pallet_aura: statemint_runtime::AuraConfig {
+			authorities: invulnerables.iter().cloned().map(|(_, aura)| aura).collect(),
+		},
 	}
 }
 
@@ -234,14 +261,14 @@ fn statemine_testnet_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, 1 << 60))
+				.map(|k| (k, STATEMINE_ED * 4096))
 				.collect(),
 		},
 		pallet_sudo: statemine_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_collator_selection: statemine_runtime::CollatorSelectionConfig {
 			invulnerables: vec![root_key],
-			candidacy_bond: 1 << 60,
+			candidacy_bond: STATEMINE_ED * 16,
 			..Default::default()
 		},
 		pallet_session: Default::default(),
