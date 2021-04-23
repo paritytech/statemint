@@ -1,4 +1,18 @@
-use cumulus_primitives_core::ParaId;
+// Copyright (C) 2021 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.use cumulus_primitives_core::ParaId;
+
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -124,14 +138,14 @@ fn statemint_testnet_genesis(
 				.collect(),
 		},
 		pallet_sudo: statemint_runtime::SudoConfig { key: root_key.clone() },
-		pallet_aura: Default::default(),
-		pallet_session: Default::default(),
 		parachain_info: statemint_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_collator_selection: statemint_runtime::CollatorSelectionConfig {
 			invulnerables: vec![root_key],
 			candidacy_bond: 1 << 60,
 			..Default::default()
 		},
+		pallet_session: Default::default(),
+		pallet_aura: Default::default(),
 	}
 }
 
@@ -223,13 +237,13 @@ fn statemine_testnet_genesis(
 				.collect(),
 		},
 		pallet_sudo: statemine_runtime::SudoConfig { key: root_key.clone() },
-		pallet_aura: Default::default(),
-		pallet_session: Default::default(),
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_collator_selection: statemine_runtime::CollatorSelectionConfig {
+		pallet_collator_selection: statemint_runtime::CollatorSelectionConfig {
 			invulnerables: vec![root_key],
 			candidacy_bond: 1 << 60,
 			..Default::default()
 		},
+		pallet_session: Default::default(),
+		pallet_aura: Default::default(),
 	}
 }
