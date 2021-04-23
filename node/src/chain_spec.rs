@@ -21,6 +21,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use statemint_runtime::{AccountId, Signature};
 use statemine_runtime;
 use hex_literal::hex;
+use polkadot_service::ParaId;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
 pub type StatemineChainSpec = sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
@@ -238,7 +239,7 @@ fn statemine_testnet_genesis(
 		},
 		pallet_sudo: statemine_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_collator_selection: statemint_runtime::CollatorSelectionConfig {
+		pallet_collator_selection: statemine_runtime::CollatorSelectionConfig {
 			invulnerables: vec![root_key],
 			candidacy_bond: 1 << 60,
 			..Default::default()
