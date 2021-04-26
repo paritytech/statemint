@@ -28,7 +28,7 @@
 			"wsPort": 9988,
 			"port": 31200,
 			"balance": "1000000000000000000000",
-			"flags": ["--", "--execution=wasm"]
+			"flags": ["-lruntime=debug", "--", "--execution=wasm"]
 		},
 		{
 			"bin": "./target/release/statemint",
