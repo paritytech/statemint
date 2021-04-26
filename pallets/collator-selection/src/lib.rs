@@ -321,7 +321,6 @@ pub mod pallet {
 
 			let current_count = Self::try_remove_candidate(&who)?;
 
-			Self::deposit_event(Event::CandidateRemoved(who));
 			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
 		}
 	}
@@ -339,6 +338,7 @@ pub mod pallet {
 				candidates.remove(index);
 				Ok(candidates.len())
 			});
+			Self::deposit_event(Event::CandidateRemoved(who.clone()));
 			current_count
 		}
 
@@ -382,8 +382,9 @@ pub mod pallet {
 					candidates[index].last_block = frame_system::Pallet::<T>::block_number();
 				}
 			});
+			let candidates_len = Self::candidates().len();
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
-				T::WeightInfo::note_author(),
+				T::WeightInfo::note_author(candidates_len as u32),
 				DispatchClass::Mandatory,
 			);
 		}
@@ -401,7 +402,12 @@ pub mod pallet {
 				index,
 				<frame_system::Pallet<T>>::block_number(),
 			);
-			Some(Self::assemble_collators())
+			let result = Some(Self::assemble_collators());
+			frame_system::Pallet::<T>::register_extra_weight_unchecked(
+				T::WeightInfo::new_session(candidates_len as u32),
+				DispatchClass::Mandatory,
+			);
+			result
 		}
 		fn start_session(_: SessionIndex) {
 			// we don't care.

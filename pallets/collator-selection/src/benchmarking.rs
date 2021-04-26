@@ -27,6 +27,7 @@ use frame_support::{
 	traits::{Currency, Get, EnsureOrigin},
 };
 use pallet_authorship::EventHandler;
+use pallet_session::SessionManager;
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -75,7 +76,7 @@ benchmarks! {
 		assert_last_event::<T>(Event::NewInvulnerables(new_invulnerables).into());
 	}
 
-	set_max_candidates {
+	set_desired_candidates {
 		let max: u32 = 999;
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
@@ -148,6 +149,22 @@ benchmarks! {
 		<CollatorSelection<T> as EventHandler<_, _>>::note_author(author.clone())
 	} verify {
 		assert!(T::Currency::free_balance(&author) > 0u32.into());
+	}
+
+	// worse case is on new session.
+	new_session {
+		let c in 1 .. T::MaxCandidates::get();
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(c);
+		register_candidates::<T>(c);
+		let new_block: T::BlockNumber = 10u32.into();
+		assert!(<BootBlock<T>>::get() != new_block.clone());
+		frame_system::Pallet::<T>::set_block_number(new_block.clone());
+	}: {
+		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
+	} verify {
+		assert!(<BootBlock<T>>::get() == new_block);
+		// how to verify? change block number and check that boot block has changed
 	}
 }
 
