@@ -22,10 +22,10 @@ use frame_support::{
 	PalletId
 };
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
-	testing::{Header},
+	RuntimeAppPublic,
+	traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
+	testing::{Header, UintAuthorityId},
 };
-use sp_consensus_aura::sr25519::AuthorityId;
 use frame_system::{EnsureSignedBy};
 use frame_system as system;
 
@@ -41,6 +41,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
 		Aura: pallet_aura::{Pallet, Call, Storage, Config<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		CollatorSelection: collator_selection::{Pallet, Call, Storage, Event<T>},
@@ -121,18 +122,71 @@ impl pallet_timestamp::Config for Test {
 }
 
 impl pallet_aura::Config for Test {
-	type AuthorityId = AuthorityId;
+	type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
+}
+
+sp_runtime::impl_opaque_keys! {
+	pub struct MockSessionKeys {
+		// a key for aura authoring
+		pub aura: UintAuthorityId,
+	}
+}
+
+impl From<UintAuthorityId> for MockSessionKeys {
+	fn from(aura: sp_runtime::testing::UintAuthorityId) -> Self {
+		Self { aura }
+	}
+}
+
+parameter_types! {
+	pub static SessionHandlerCollators: Vec<u64> = vec![];
+	pub static SessionChangeBlock: u64 = 0;
+}
+
+pub struct TestSessionHandler;
+impl pallet_session::SessionHandler<u64> for TestSessionHandler {
+	const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] = &[UintAuthorityId::ID];
+	fn on_genesis_session<Ks: OpaqueKeys>(keys: &[(u64, Ks)]) {
+		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+	}
+	fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
+		SessionChangeBlock::set(System::block_number());
+		dbg!(keys.len());
+		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+	}
+	fn on_before_session_ending() {}
+	fn on_disabled(_: usize) {}
+}
+
+parameter_types! {
+	pub const Offset: u64 = 0;
+	pub const Period: u64 = 10;
+}
+
+impl pallet_session::Config for Test {
+	type Event = Event;
+	type ValidatorId = <Self as frame_system::Config>::AccountId;
+	// we don't have stash and controller, thus we don't need the convert as well.
+	type ValidatorIdOf = IdentityCollator;
+	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+	type SessionManager = CollatorSelection;
+	type SessionHandler = TestSessionHandler;
+	type Keys = MockSessionKeys;
+	type DisabledValidatorsThreshold = ();
+	type WeightInfo = ();
 }
 
 ord_parameter_types! {
 	pub const RootAccount: u64 = 777;
 }
+
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 20;
 	pub const MaxInvulnerables: u32 = 20;
-	pub const Epoch: u64 = 10;
 }
+
 impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
@@ -140,26 +194,48 @@ impl Config for Test {
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
-	type Epoch = Epoch;
 	type WeightInfo = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
+	sp_tracing::try_init_simple();
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	let genesis = pallet_balances::GenesisConfig::<Test> {
+	let invulnerables = vec![1, 2];
+	let keys = invulnerables.iter().map(|i|
+		(
+			*i,
+			*i,
+			MockSessionKeys { aura: UintAuthorityId(*i) },
+		)
+	).collect::<Vec<_>>();
+
+	let balances = pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
 			(1, 100),
-			(2, 200),
+			(2, 100),
+			(3, 100),
+			(4, 100),
+			(5, 100),
 		],
 	};
-	let genesis_staking = collator_selection::GenesisConfig::<Test> {
-		invulnerables: vec![
-			1,
-			2,
-			3,
-		],
+	let collator_selection = collator_selection::GenesisConfig::<Test> {
+		desired_candidates: 2,
+		candidacy_bond: 10,
+		invulnerables,
 	};
-	genesis.assimilate_storage(&mut t).unwrap();
-	genesis_staking.assimilate_storage(&mut t).unwrap();
+	let session = pallet_session::GenesisConfig::<Test> { keys };
+	balances.assimilate_storage(&mut t).unwrap();
+	// collator selection must be initialized before session.
+	collator_selection.assimilate_storage(&mut t).unwrap();
+	session.assimilate_storage(&mut t).unwrap();
+
 	t.into()
+}
+
+pub fn initialize_to_block(n: u64) {
+	for i in System::block_number()+1..=n {
+		println!("init {}", i);
+		System::set_block_number(i);
+		<AllPallets as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
+	}
 }

@@ -283,6 +283,24 @@ default-features = false
 version = "0.8.30"
 path = '../common'
 
+[dependencies.pallet-aura]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '3.0.0'
+
+[dependencies.pallet-session]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '3.0.0'
+
+[dependencies.sp-consensus-aura]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'rococo-v1'
+version = '0.9.0'
+
 
 [features]
 default = ['std']
@@ -306,6 +324,8 @@ runtime-benchmarks = [
 std = [
 	'codec/std',
 	'serde',
+	'sp-consensus-aura/std',
+	'pallet-aura/std',
 	'sp-api/std',
 	'sp-std/std',
 	'sp-io/std',
@@ -331,6 +351,7 @@ std = [
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-timestamp/std',
 	'pallet-sudo/std',
+	'pallet-session/std',
 	'pallet-xcm/std',
 	'pallet-transaction-payment/std',
 	'pallet-collator-selection/std',

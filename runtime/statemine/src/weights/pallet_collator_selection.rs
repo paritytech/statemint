@@ -42,7 +42,7 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 			.saturating_add((125_000 as Weight).saturating_mul(b as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
-	fn set_max_candidates() -> Weight {
+	fn set_desired_candidates() -> Weight {
 		(25_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}

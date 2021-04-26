@@ -52,7 +52,6 @@
 //!
 //! Note: Eventually the Pot distribution may be modified as discussed in
 //! [this issue](https://github.com/paritytech/statemint/issues/21#issuecomment-810481073).
-//! 
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -74,20 +73,36 @@ pub mod pallet {
 		dispatch::DispatchResultWithPostInfo,
 		pallet_prelude::*,
 		inherent::Vec,
-		traits::{Currency, ReservableCurrency, EnsureOrigin, ExistenceRequirement::KeepAlive},
-		PalletId
+		traits::{
+			Currency, ReservableCurrency, EnsureOrigin, ExistenceRequirement::KeepAlive,
+		},
+		PalletId,
 	};
 	use frame_system::pallet_prelude::*;
 	use frame_system::Config as SystemConfig;
 	use frame_support::{
-		sp_runtime::{RuntimeDebug, traits::AccountIdConversion},
+		sp_runtime::{
+			RuntimeDebug,
+			traits::AccountIdConversion,
+		},
 		weights::DispatchClass,
 	};
 	use core::ops::Div;
+	use pallet_session::SessionManager;
+	use sp_staking::SessionIndex;
 	pub use crate::weights::WeightInfo;
 
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
+
+	/// A convertor from collators id. Since this pallet does not have stash/controller, this is
+	/// just identity.
+	pub struct IdentityCollator;
+	impl<T> sp_runtime::traits::Convert<T, Option<T>> for IdentityCollator {
+		fn convert(t: T) -> Option<T> {
+			Some(t)
+		}
+	}
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -115,12 +130,6 @@ pub mod pallet {
 		/// Used only for benchmarking.
 		type MaxInvulnerables: Get<u32>;
 
-		/// Length of an epoch. Each epoch is merely a fixed period of time during which the
-		/// [`Collators`] will not change. At each block where `block % epoch == 0`, based on the
-		/// logic of the pallet, a new collator set is created from [`Candidates`] and
-		/// [`Invulnerables`].
-		type Epoch: Get<Self::BlockNumber>;
-
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -128,7 +137,7 @@ pub mod pallet {
 	/// Basic information about a collation candidate.
 	#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 	pub struct CandidateInfo<AccountId, Balance, BlockNumber> {
-		/// Account ID.
+		/// Account identifier.
 		pub who: AccountId,
 		/// Reserved deposit.
 		pub deposit: Balance,
@@ -139,9 +148,6 @@ pub mod pallet {
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
-
-	// The pallet's runtime storage items.
-	// https://substrate.dev/docs/en/knowledgebase/runtime/storage
 
 	/// The invulnerable, fixed collators.
 	#[pallet::storage]
@@ -154,7 +160,7 @@ pub mod pallet {
 	pub type Candidates<T: Config> = StorageValue<
 		_,
 		Vec<CandidateInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>>,
-		ValueQuery
+		ValueQuery,
 	>;
 
 	/// Desired number of candidates.
@@ -162,22 +168,18 @@ pub mod pallet {
 	/// This should ideally always be less than [`Config::MaxCandidates`] for weights to be correct.
 	#[pallet::storage]
 	#[pallet::getter(fn desired_candidates)]
-	pub type DesiredCandidate<T> = StorageValue<_, u32, ValueQuery>;
+	pub type DesiredCandidates<T> = StorageValue<_, u32, ValueQuery>;
 
 	/// Fixed deposit bond for each candidate.
 	#[pallet::storage]
 	#[pallet::getter(fn candidacy_bond)]
 	pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
-	/// Final collator set that this pallet computes. Change only every [`Self::Epoch`].
-	// #[pallet::storage]
-	// #[pallet::getter(fn collators)]
-	// pub type Collators<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
-	// TODO: @kianenigma
-
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		pub invulnerables: Vec<T::AccountId>,
+		pub candidacy_bond: BalanceOf<T>,
+		pub desired_candidates: u32,
 	}
 
 	#[cfg(feature = "std")]
@@ -185,6 +187,8 @@ pub mod pallet {
 		fn default() -> Self {
 			Self {
 				invulnerables: Default::default(),
+				candidacy_bond: Default::default(),
+				desired_candidates: Default::default(),
 			}
 		}
 	}
@@ -192,13 +196,22 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
+
+			let duplicate_invulnerables = self.invulnerables.iter().collect::<std::collections::BTreeSet<_>>();
+			assert!(duplicate_invulnerables.len()  == self.invulnerables.len(), "duplicate invulnerables in genesis.");
+
 			assert!(
 				T::MaxInvulnerables::get() >= (self.invulnerables.len() as u32),
 				"genesis invulnerables are more than T::MaxInvulnerables",
 			);
+			assert!(
+				T::MaxCandidates::get() >= self.desired_candidates,
+				"genesis desired_candidates are more than T::MaxCandidates",
+			);
+
+			<DesiredCandidates<T>>::put(&self.desired_candidates);
+			<CandidacyBond<T>>::put(&self.candidacy_bond);
 			<Invulnerables<T>>::put(&self.invulnerables);
-			// TODO: @kianenigma
-			// <Collators<T>>::put(&self.invulnerables);
 		}
 	}
 
@@ -207,10 +220,10 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		NewInvulnerables(Vec<T::AccountId>),
-		NewDesiredCandidate(u32),
+		NewDesiredCandidates(u32),
 		NewCandidacyBond(BalanceOf<T>),
 		CandidateAdded(T::AccountId, BalanceOf<T>),
-		CandidateRemoved(T::AccountId)
+		CandidateRemoved(T::AccountId),
 	}
 
 	// Errors inform users that something went wrong.
@@ -221,26 +234,13 @@ pub mod pallet {
 		Permission,
 		AlreadyCandidate,
 		NotCandidate,
+		AlreadyInvulnerable,
+		InvalidProof,
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		// TODO: @kianenigma
-		// fn on_initialize(n: T::BlockNumber) -> Weight {
-		// 	if (n % T::Epoch::get().max(One::one())).is_zero() {
-		// 		let mut collators = Self::invulnerables();
-		// 		collators.extend(Self::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>());
-		// 		<Collators<T>>::put(collators);
-		// 		T::DbWeight::get().reads_writes(2, 1)
-		// 	} else {
-		// 		Zero::zero()
-		// 	}
-		// }
-	}
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
-	// These functions materialize as "extrinsics", which are often compared to transactions.
-	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
@@ -260,8 +260,8 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(T::WeightInfo::set_max_candidates())]
-		pub fn set_max_candidates(origin: OriginFor<T>, max: u32) -> DispatchResultWithPostInfo {
+		#[pallet::weight(T::WeightInfo::set_desired_candidates())]
+		pub fn set_desired_candidates(origin: OriginFor<T>, max: u32) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			// we trust origin calls, this is just a for more accurate benchmarking
 			if max > T::MaxCandidates::get() {
@@ -269,8 +269,8 @@ pub mod pallet {
 					"max > T::MaxCandidates; you might need to run benchmarks again"
 				);
 			}
-			<DesiredCandidate<T>>::put(&max);
-			Self::deposit_event(Event::NewDesiredCandidate(max));
+			<DesiredCandidates<T>>::put(&max);
+			Self::deposit_event(Event::NewDesiredCandidates(max));
 			Ok(().into())
 		}
 
@@ -289,19 +289,21 @@ pub mod pallet {
 			// ensure we are below limit.
 			let length = <Candidates<T>>::decode_len().unwrap_or_default();
 			ensure!((length as u32) < Self::desired_candidates(), Error::<T>::TooManyCandidates);
+			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
 
 			let deposit = Self::candidacy_bond();
 			let incoming = CandidateInfo { who: who.clone(), deposit, last_block: None };
 
-			let current_count = <Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
-				if candidates.into_iter().any(|candidate| candidate.who == who) {
-					Err(Error::<T>::AlreadyCandidate)?
-				} else {
-					T::Currency::reserve(&who, deposit)?;
-					candidates.push(incoming);
-					Ok(candidates.len())
-				}
-			})?;
+			let current_count =
+				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
+					if candidates.into_iter().any(|candidate| candidate.who == who) {
+						Err(Error::<T>::AlreadyCandidate)?
+					} else {
+						T::Currency::reserve(&who, deposit)?;
+						candidates.push(incoming);
+						Ok(candidates.len())
+					}
+				})?;
 
 			Self::deposit_event(Event::CandidateAdded(who, deposit));
 			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
@@ -328,6 +330,17 @@ pub mod pallet {
 		pub fn account_id() -> T::AccountId {
 			T::PotId::get().into_account()
 		}
+
+		/// Assemble the current set of candidates and invulnerables into the next collator set.
+		///
+		/// This is done on the fly, as frequent as we are told to do so, as the session manager.
+		pub fn assemble_collators() -> Vec<T::AccountId> {
+			let mut collators = Self::invulnerables();
+			collators.extend(
+				Self::candidates().into_iter().map(|c| c.who).collect::<Vec<_>>(),
+			);
+			collators
+		}
 	}
 
 	/// Keep track of number of authored blocks per authority, uncles are counted as well since
@@ -351,6 +364,24 @@ pub mod pallet {
 
 		fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {
 			//TODO can we ignore this?
+		}
+	}
+
+	/// Play the role of the session manager.
+	impl<T: Config> SessionManager<T::AccountId> for Pallet<T> {
+		fn new_session(index: SessionIndex) -> Option<Vec<T::AccountId>> {
+			log::info!(
+				"assembling new collators for new session {} at #{:?}",
+				index,
+				<frame_system::Pallet<T>>::block_number(),
+			);
+			Some(Self::assemble_collators())
+		}
+		fn start_session(_: SessionIndex) {
+			// we don't care.
+		}
+		fn end_session(_: SessionIndex) {
+			// we don't care.
 		}
 	}
 }

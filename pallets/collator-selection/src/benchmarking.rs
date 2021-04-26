@@ -80,11 +80,11 @@ benchmarks! {
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
-			<CollatorSelection<T>>::set_max_candidates(origin, max.clone())
+			<CollatorSelection<T>>::set_desired_candidates(origin, max.clone())
 		);
 	}
 	verify {
-		assert_last_event::<T>(Event::NewDesiredCandidate(max).into());
+		assert_last_event::<T>(Event::NewDesiredCandidates(max).into());
 	}
 
 	set_candidacy_bond {
@@ -105,7 +105,7 @@ benchmarks! {
 		let c in 1 .. T::MaxCandidates::get();
 
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
-		<DesiredCandidate<T>>::put(c + 1);
+		<DesiredCandidates<T>>::put(c + 1);
 		register_candidates::<T>(c);
 
 		let caller: T::AccountId = whitelisted_caller();
@@ -121,7 +121,7 @@ benchmarks! {
 	leave_intent {
 		let c in 1 .. T::MaxCandidates::get();
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
-		<DesiredCandidate<T>>::put(c);
+		<DesiredCandidates<T>>::put(c);
 		register_candidates::<T>(c);
 
 		let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
