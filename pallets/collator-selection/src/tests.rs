@@ -245,7 +245,6 @@ fn session_management_works() {
 		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
 		// but we have a new candidate.
 		assert_eq!(CollatorSelection::candidates().len(), 2);
-		println!("${:?}", CollatorSelection::candidates());
 
 		initialize_to_block(10);
 		assert_eq!(SessionChangeBlock::get(), 10);
@@ -269,39 +268,22 @@ fn boot_mechanism() {
 	new_test_ext().execute_with(|| {
 		// add a new collator
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
-		println!("boot block ${:?}", CollatorSelection::boot_block());
-
-		initialize_to_block(1);
-		println!("boot block ${:?}", CollatorSelection::boot_block());
-		// no one is booted
-		assert_eq!(CollatorSelection::candidates().len(), 1);
-
-		initialize_to_block(6);
-
-		// 2 new candidates one with authored block
-		assert_eq!(CollatorSelection::candidates().len(), 1);
-
-		println!("${:?}", CollatorSelection::candidates());
-		println!("${:?}", CollatorSelection::invulnerables());
-		println!("boot block ${:?}", CollatorSelection::boot_block());
-
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
-		initialize_to_block(10);
-		println!("boot block ${:?}", CollatorSelection::boot_block());
-
 		assert_eq!(CollatorSelection::candidates().len(), 2);
-		println!("${:?}", CollatorSelection::candidates());
-
-		// pallet-session has 1 session delay; current validators are the same.
-		assert_eq!(Session::validators(), vec![1, 2]);
-		// session handlers (aura, et. al.) cannot see this yet.
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
-
-		initialize_to_block(31);
-		println!("${:?}", CollatorSelection::candidates());
-		assert_eq!(SessionChangeBlock::get(), 30);
-		// all non invulnerables booted
+		initialize_to_block(21);
+		assert_eq!(CollatorSelection::boot_block(), 20);
+		assert_eq!(SessionChangeBlock::get(), 20);
+		// 4 authored this block, gets to stay 3 was booted
+		assert_eq!(CollatorSelection::candidates().len(), 1);
 		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 4]);
+		let collator = CandidateInfo {
+			who: 4,
+			deposit: 10,
+			last_block: 21
+		};
+		assert_eq!(CollatorSelection::candidates(), vec![collator]);
+		// booted collator gets funds back
+		assert_eq!(Balances::free_balance(3), 100);
 	});
 }
 

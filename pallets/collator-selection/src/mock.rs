@@ -185,7 +185,6 @@ parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 20;
 	pub const MaxInvulnerables: u32 = 20;
-	pub const BootCheck: u64 = 5;
 }
 
 impl Config for Test {
@@ -235,7 +234,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 pub fn initialize_to_block(n: u64) {
 	for i in System::block_number()+1..=n {
-		println!("init {}", i);
 		System::set_block_number(i);
 		<AllPallets as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
 	}
