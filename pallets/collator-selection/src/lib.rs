@@ -403,6 +403,7 @@ pub mod pallet {
 				<frame_system::Pallet<T>>::block_number(),
 			);
 			let result = Some(Self::assemble_collators());
+			let candidates_len = Self::candidates().len();
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
 				T::WeightInfo::new_session(candidates_len as u32),
 				DispatchClass::Mandatory,
