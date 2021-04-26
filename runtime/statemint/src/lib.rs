@@ -47,7 +47,7 @@ use frame_system::{
 };
 
 // Polkadot imports
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
+use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{
 	BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate,
@@ -329,7 +329,7 @@ parameter_types! {
 pub type RelayCouncilMajority = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<RelayPrefix, RelayBody>>,
+	EnsureXcm<runtime_common::IsMajorityOf<RelayPrefix, RelayBody>>,
 >;
 
 impl pallet_assets::Config for Runtime {
@@ -489,7 +489,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
 	type SelfParaId = parachain_info::Module<Runtime>;
-	type DownwardMessageHandlers = cumulus_primitives_utility::UnqueuedDmpAsParent<
+	type DownwardMessageHandlers = runtime_common::UnqueuedDmpAsParent<
 		MaxDownwardMessageWeight,
 		XcmExecutor<XcmConfig>,
 		Call,
@@ -554,6 +554,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// Native signed account converter; this just converts an `AccountId32` origin into a normal
 	// `Origin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RococoNetwork, Origin>,
+	XcmPassthrough<Origin>,
 );
 
 parameter_types! {
@@ -567,10 +568,30 @@ parameter_types! {
 	pub AllowUnpaidFrom: Vec<MultiLocation> = vec![ MultiLocation::X1(Junction::Parent) ];
 }
 
+pub struct AllowUnpaidExecutionFromCouncil;
+impl xcm_executor::traits::ShouldExecute for AllowUnpaidExecutionFromCouncil {
+	fn should_execute<Call>(
+		origin: &MultiLocation,
+		_top_level: bool,
+		_message: &xcm::v0::Xcm<Call>,
+		_shallow_weight: Weight,
+		_weight_credit: &mut Weight,
+	) -> Result<(), ()> {
+		log::debug!(target: "runtime::should_execute","origin: {:?}", origin);
+		frame_support::ensure!(
+			matches!(origin, MultiLocation::X2(Junction::Parent, Junction::Plurality { id, part })),
+			()
+		);
+		log::debug!(target: "runtime::should_execute", "yes");
+		Ok(())
+	}
+}
+
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
 	AllowUnpaidExecutionFrom<IsInVec<AllowUnpaidFrom>>,	// <- Parent gets free execution
+	AllowUnpaidExecutionFromCouncil,
 );
 
 pub struct XcmConfig;

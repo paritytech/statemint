@@ -100,6 +100,20 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = 'apopiak-xcm-origin'
 version = '3.0.0'
 
+[dependencies.xcm]
+git = 'https://github.com/paritytech/polkadot'
+branch = 'apopiak-xcm-origin'
+default-features = false
+
+# cumulus
+[dependencies.cumulus-primitives-core]
+git = 'https://github.com/paritytech/cumulus.git'
+branch = 'apopiak-xcm-origin'
+default-features = false
+
+[dependencies]
+log = { version = "0.4.14", default-features = false }
+
 [features]
 default = ["std"]
 std = [
@@ -114,4 +128,5 @@ std = [
 	'node-primitives/std',
 	'polkadot-runtime-common/std',
 	'polkadot-primitives/std',
+	'log/std',
 ]

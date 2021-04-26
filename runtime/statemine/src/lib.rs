@@ -47,7 +47,7 @@ use frame_system::{
 };
 
 // Polkadot imports
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
+use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{
 	BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate,
@@ -489,7 +489,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
 	type SelfParaId = parachain_info::Module<Runtime>;
-	type DownwardMessageHandlers = cumulus_primitives_utility::UnqueuedDmpAsParent<
+	type DownwardMessageHandlers = runtime_common::UnqueuedDmpAsParent<
 		MaxDownwardMessageWeight,
 		XcmExecutor<XcmConfig>,
 		Call,
