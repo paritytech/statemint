@@ -362,7 +362,6 @@ pub mod pallet {
 				}).collect::<Vec<_>>(),
 			);
 			<BootBlock<T>>::put(boot_block + T::BootCheck::get());
-			dbg!(&collators);
 			collators
 		}
 	}

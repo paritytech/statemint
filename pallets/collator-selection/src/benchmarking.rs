@@ -75,7 +75,7 @@ benchmarks! {
 		assert_last_event::<T>(Event::NewInvulnerables(new_invulnerables).into());
 	}
 
-	aet_max_candidate {
+	set_max_candidates {
 		let max: u32 = 999;
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {

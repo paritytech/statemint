@@ -131,3 +131,11 @@ __Commits:__
     * ``` yarn ```
     * ``` yarn start ```
 
+### Benchmarks 
+
+* TODO
+ - [] choose steps and repeats
+ - [] run benchmarks on proper machine specs
+
+ * running 
+    * from root run ```./scripts/benchmarks```
