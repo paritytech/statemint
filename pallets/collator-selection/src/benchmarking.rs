@@ -133,6 +133,11 @@ benchmarks! {
 
 	// worse case is paying a non-existing candidate account.
 	note_author {
+		let c in 1 .. T::MaxCandidates::get();
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(c);
+		register_candidates::<T>(c);
+
 		T::Currency::make_free_balance_be(
 			&<CollatorSelection<T>>::account_id(),
 			T::Currency::minimum_balance() * 2u32.into(),
