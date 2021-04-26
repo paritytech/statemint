@@ -27,7 +27,7 @@ use hex_literal::hex;
 pub type ChainSpec = sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
 pub type StatemineChainSpec = sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
 
-const STATEMINT_ED: Balance = statemine_runtime::EXISTENTIAL_DEPOSIT;
+const STATEMINT_ED: Balance = statemint_runtime::EXISTENTIAL_DEPOSIT;
 const STATEMINE_ED: Balance = statemine_runtime::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
