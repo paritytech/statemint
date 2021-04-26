@@ -195,7 +195,6 @@ impl Config for Test {
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
-	type BootCheck = BootCheck;
 	type WeightInfo = ();
 }
 

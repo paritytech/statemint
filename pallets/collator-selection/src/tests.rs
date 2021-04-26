@@ -245,16 +245,13 @@ fn session_management_works() {
 		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
 		// but we have a new candidate.
 		assert_eq!(CollatorSelection::candidates().len(), 2);
-
 		println!("${:?}", CollatorSelection::candidates());
-		println!("${:?}", CollatorSelection::invulnerables());
 
 		initialize_to_block(10);
 		assert_eq!(SessionChangeBlock::get(), 10);
 		// pallet-session has 1 session delay; current validators are the same.
 		assert_eq!(Session::validators(), vec![1, 2]);
-		println!("${:?}", CollatorSelection::candidates());
-		println!("${:?}", CollatorSelection::invulnerables());
+
 		// queued ones are changed, and now we have 3.
 		assert_eq!(Session::queued_keys().len(), 3);
 		// session handlers (aura, et. al.) cannot see this yet.
@@ -263,7 +260,48 @@ fn session_management_works() {
 		initialize_to_block(20);
 		assert_eq!(SessionChangeBlock::get(), 20);
 		// changed are now reflected to session handlers.
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3]);
+		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 4]);
+	});
+}
+
+#[test]
+fn boot_mechanism() {
+	new_test_ext().execute_with(|| {
+		// add a new collator
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
+		println!("boot block ${:?}", CollatorSelection::boot_block());
+
+		initialize_to_block(1);
+		println!("boot block ${:?}", CollatorSelection::boot_block());
+		// no one is booted
+		assert_eq!(CollatorSelection::candidates().len(), 1);
+
+		initialize_to_block(6);
+
+		// 2 new candidates one with authored block
+		assert_eq!(CollatorSelection::candidates().len(), 1);
+
+		println!("${:?}", CollatorSelection::candidates());
+		println!("${:?}", CollatorSelection::invulnerables());
+		println!("boot block ${:?}", CollatorSelection::boot_block());
+
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
+		initialize_to_block(10);
+		println!("boot block ${:?}", CollatorSelection::boot_block());
+
+		assert_eq!(CollatorSelection::candidates().len(), 2);
+		println!("${:?}", CollatorSelection::candidates());
+
+		// pallet-session has 1 session delay; current validators are the same.
+		assert_eq!(Session::validators(), vec![1, 2]);
+		// session handlers (aura, et. al.) cannot see this yet.
+		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
+
+		initialize_to_block(31);
+		println!("${:?}", CollatorSelection::candidates());
+		assert_eq!(SessionChangeBlock::get(), 30);
+		// all non invulnerables booted
+		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 4]);
 	});
 }
 

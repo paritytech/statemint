@@ -130,8 +130,6 @@ pub mod pallet {
 		/// Used only for benchmarking.
 		type MaxInvulnerables: Get<u32>;
 
-		type BootCheck: Get<Self::BlockNumber>;
-
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -361,7 +359,7 @@ pub mod pallet {
 
 				}).collect::<Vec<_>>(),
 			);
-			<BootBlock<T>>::put(boot_block + T::BootCheck::get());
+			<BootBlock<T>>::put(frame_system::Pallet::<T>::block_number());
 			collators
 		}
 	}
