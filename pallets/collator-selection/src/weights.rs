@@ -29,7 +29,7 @@ pub trait WeightInfo {
 	fn register_as_candidate(_c: u32) -> Weight;
 	fn leave_intent(_c: u32) -> Weight;
 	fn note_author(_c: u32) -> Weight;
-	fn new_session(c: u32) -> Weight;
+	fn new_session(_c: u32, _r: u32) -> Weight;
 }
 
 /// Weights for pallet_collator_selection using the Substrate node and recommended hardware.
@@ -70,14 +70,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
-	fn new_session(c: u32, ) -> Weight {
+	fn new_session(c: u32, r: u32, ) -> Weight {
 		(0 as Weight)
-			// Standard Error: 4_466_000
-			.saturating_add((246_623_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
+			// Standard Error: 4_375_000
+			.saturating_add((289_454_000 as Weight).saturating_mul(c as Weight))
+			// Standard Error: 4_375_000
+			.saturating_add((213_670_000 as Weight).saturating_mul(r as Weight))
 			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(c as Weight)))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(r as Weight)))
 			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(c as Weight)))
+			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(r as Weight)))
 	}
 }
 
@@ -119,13 +121,15 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
-	fn new_session(c: u32, ) -> Weight {
+	fn new_session(c: u32, r: u32, ) -> Weight {
 		(0 as Weight)
-			// Standard Error: 4_466_000
-			.saturating_add((246_623_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
+			// Standard Error: 4_375_000
+			.saturating_add((289_454_000 as Weight).saturating_mul(c as Weight))
+			// Standard Error: 4_375_000
+			.saturating_add((213_670_000 as Weight).saturating_mul(r as Weight))
 			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(c as Weight)))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(r as Weight)))
 			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(c as Weight)))
-	}
+			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(r as Weight)))
+		}
 }

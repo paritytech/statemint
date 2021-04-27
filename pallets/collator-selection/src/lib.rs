@@ -402,10 +402,11 @@ pub mod pallet {
 				index,
 				<frame_system::Pallet<T>>::block_number(),
 			);
-			let result = Some(Self::assemble_collators());
 			let candidates_len = Self::candidates().len();
+			let result = Some(Self::assemble_collators());
+			let removed = candidates_len - result.clone().unwrap_or_default().len();
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
-				T::WeightInfo::new_session(candidates_len as u32),
+				T::WeightInfo::new_session(candidates_len as u32, removed as u32),
 				DispatchClass::Mandatory,
 			);
 			result

@@ -51,12 +51,23 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	assert_eq!(event, &system_event);
 }
 
-fn register_candidates<T: Config>(count: u32) {
+fn register_candidates<T: Config>(count: u32, removals: u32) {
 	let candidates = (0..count).map(|c| account("candidate", c, SEED)).collect::<Vec<_>>();
 	assert!(<CandidacyBond<T>>::get() > 0u32.into(), "Bond cannot be zero!");
+	let mut i = 0;
 	for who in candidates {
 		T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 2u32.into());
-		<CollatorSelection<T>>::register_as_candidate(RawOrigin::Signed(who).into()).unwrap();
+
+		let last_block = if count - i > removals {10u32.into()} else {0u32.into()};
+
+		let candidate = CandidateInfo {
+			who,
+			deposit: T::Currency::minimum_balance(),
+			last_block
+		};
+
+		Candidates::<T>::mutate(|c| {c.push(candidate)})
+		i = i + 1;
 	}
 }
 
@@ -107,7 +118,7 @@ benchmarks! {
 
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c + 1);
-		register_candidates::<T>(c);
+		register_candidates::<T>(c, 0);
 
 		let caller: T::AccountId = whitelisted_caller();
 		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
@@ -123,7 +134,7 @@ benchmarks! {
 		let c in 1 .. T::MaxCandidates::get();
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
-		register_candidates::<T>(c);
+		register_candidates::<T>(c, 0);
 
 		let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
 		whitelist!(leaving);
@@ -137,7 +148,7 @@ benchmarks! {
 		let c in 1 .. T::MaxCandidates::get();
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
-		register_candidates::<T>(c);
+		register_candidates::<T>(c, 0);
 
 		T::Currency::make_free_balance_be(
 			&<CollatorSelection<T>>::account_id(),
@@ -154,17 +165,28 @@ benchmarks! {
 	// worse case is on new session.
 	new_session {
 		let c in 1 .. T::MaxCandidates::get();
+		let r in 1 .. T::MaxCandidates::get();
+
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
-		register_candidates::<T>(c);
-		let new_block: T::BlockNumber = 10u32.into();
-		assert!(<BootBlock<T>>::get() != new_block.clone());
+		register_candidates::<T>(c, r);
+
+		let boot_block: T::BlockNumber = 9u32.into();
+		let new_block: T::BlockNumber = 20u32.into();
+
+		<BootBlock<T>>::put(boot_block);
 		frame_system::Pallet::<T>::set_block_number(new_block.clone());
+		let pre_length = <Candidates<T>>::get().len();
+
+		assert!(<BootBlock<T>>::get() != new_block.clone());
+		assert!(<Candidates<T>>::get().len() == c as usize);
 	}: {
 		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
 	} verify {
 		assert!(<BootBlock<T>>::get() == new_block);
-		// how to verify? change block number and check that boot block has changed
+		if r > 0 {
+			assert!(<Candidates<T>>::get().len() < pre_length);
+		}
 	}
 }
 
