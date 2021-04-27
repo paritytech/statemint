@@ -175,7 +175,8 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
 
-pub const EXISTENTIAL_DEPOSIT: Balance = 100 * CENTS;
+/// The existential deposit. Set to 1/10 of its parent Relay Chain.
+pub const EXISTENTIAL_DEPOSIT: Balance = 10 * CENTS;
 
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
@@ -280,7 +281,6 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-	/// Same as Polkadot Relay Chain.
 	pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const MaxLocks: u32 = 50;
 }
