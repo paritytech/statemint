@@ -381,9 +381,8 @@ pub mod pallet {
 			let _success = T::Currency::transfer(&treasury, &author, reward, KeepAlive);
 			debug_assert!(_success.is_ok());
 			<Candidates<T>>::mutate(|candidates| {
-				if candidates.len() > 0 {
-				let index: usize = candidates.iter().position(|candidate| candidate.who == author).unwrap_or_default();
-					candidates[index].last_block = frame_system::Pallet::<T>::block_number();
+				if let Some(found) = candidates.iter_mut().find(|candidate| candidate.who == author) {
+					found.last_block = frame_system::Pallet::<T>::block_number();
 				}
 			});
 			let candidates_len = Self::candidates().len();
