@@ -330,8 +330,8 @@ pub mod pallet {
 		pub fn account_id() -> T::AccountId {
 			T::PotId::get().into_account()
 		}
-
-		pub fn try_remove_candidate(who: &T::AccountId) -> Result<usize, DispatchError> {
+		/// Removes a candidate if they exist and sends them back their deposit
+		fn try_remove_candidate(who: &T::AccountId) -> Result<usize, DispatchError> {
 			let current_count = <Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
 				let index = candidates.iter().position(|candidate| candidate.who == *who).ok_or(Error::<T>::NotCandidate)?;
 				T::Currency::unreserve(&who, candidates[index].deposit);
@@ -354,9 +354,9 @@ pub mod pallet {
 						Some(c.who)
 					} else {
 						let outcome = Self::try_remove_candidate(&c.who);
-						if let Err(why) = outcome { 
-							log::warn!("..."); 
-							debug_assert!(false, "expanation...");
+						if let Err(why) = outcome {
+							log::warn!("Failed to remove candidate {:?}", why);
+							debug_assert!(false, "failed to remove candidate {:?}", why);
 						}
 						None
 					}
@@ -405,14 +405,16 @@ pub mod pallet {
 				index,
 				<frame_system::Pallet<T>>::block_number(),
 			);
-			let candidates_len = Self::candidates().len();
-			let result = Some(Self::assemble_collators());
-			let removed = candidates_len - result.clone().unwrap_or_default().len();
+
+			let candidates_len_before = Self::candidates().len();
+			let result = Self::assemble_collators();
+			let removed = candidates_len_before - Self::candidates().len();
+
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
-				T::WeightInfo::new_session(candidates_len as u32, removed as u32),
+				T::WeightInfo::new_session(candidates_len_before as u32, removed as u32),
 				DispatchClass::Mandatory,
 			);
-			result
+			Some(result)
 		}
 		fn start_session(_: SessionIndex) {
 			// we don't care.
