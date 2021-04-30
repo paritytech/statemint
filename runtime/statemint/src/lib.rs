@@ -329,7 +329,7 @@ parameter_types! {
 pub type RelayCouncilMajority = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
-	EnsureXcm<runtime_common::IsMajorityOf<RelayPrefix, RelayBody>>,
+	EnsureXcm<IsMajorityOfBody<RelayPrefix, RelayBody>>,
 >;
 
 impl pallet_assets::Config for Runtime {
@@ -554,6 +554,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// Native signed account converter; this just converts an `AccountId32` origin into a normal
 	// `Origin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RococoNetwork, Origin>,
+	// Pass through the multilocation origin of the XCM as the inner value of the origin.
 	XcmPassthrough<Origin>,
 );
 
@@ -568,30 +569,11 @@ parameter_types! {
 	pub AllowUnpaidFrom: Vec<MultiLocation> = vec![ MultiLocation::X1(Junction::Parent) ];
 }
 
-pub struct AllowUnpaidExecutionFromCouncil;
-impl xcm_executor::traits::ShouldExecute for AllowUnpaidExecutionFromCouncil {
-	fn should_execute<Call>(
-		origin: &MultiLocation,
-		_top_level: bool,
-		_message: &xcm::v0::Xcm<Call>,
-		_shallow_weight: Weight,
-		_weight_credit: &mut Weight,
-	) -> Result<(), ()> {
-		log::debug!(target: "runtime::should_execute","origin: {:?}", origin);
-		frame_support::ensure!(
-			matches!(origin, MultiLocation::X2(Junction::Parent, Junction::Plurality { id, part })),
-			()
-		);
-		log::debug!(target: "runtime::should_execute", "yes");
-		Ok(())
-	}
-}
-
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
 	AllowUnpaidExecutionFrom<IsInVec<AllowUnpaidFrom>>,	// <- Parent gets free execution
-	AllowUnpaidExecutionFromCouncil,
+	runtime_common::AllowUnpaidExecutionFromPlurality, // <- council gets free execution
 );
 
 pub struct XcmConfig;

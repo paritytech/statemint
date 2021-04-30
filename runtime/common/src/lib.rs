@@ -22,6 +22,7 @@ use cumulus_primitives_core::{DownwardMessageHandler, InboundDownwardMessage};
 use frame_support::{traits::{Filter, Get}, weights::Weight};
 use sp_std::{convert::TryFrom, marker::PhantomData};
 use xcm::{VersionedXcm, v0::{BodyId, ExecuteXcm, Junction, MultiLocation, Xcm}};
+use xcm_executor::traits::ShouldExecute;
 
 pub struct UnqueuedDmpAsParent<MaxWeight, XcmExecutor, Call>(
 	PhantomData<(MaxWeight, XcmExecutor, Call)>
@@ -46,7 +47,6 @@ impl<
 	}
 }
 
-
 pub struct IsMajorityOf<Prefix, Body>(PhantomData<(Prefix, Body)>);
 impl<Prefix: Get<MultiLocation>, Body: Get<BodyId>> Filter<MultiLocation> for IsMajorityOf<Prefix, Body> {
 	fn filter(l: &MultiLocation) -> bool {
@@ -55,5 +55,24 @@ impl<Prefix: Get<MultiLocation>, Body: Get<BodyId>> Filter<MultiLocation> for Is
 		let does_match = matches!(maybe_suffix, Some(Junction::Plurality { id, part }) if id == &Body::get() && part.is_majority());
 		log::debug!(target: "runtime::xcm::filter", "matches: {:?}", does_match);
 		does_match
+	}
+}
+
+pub struct AllowUnpaidExecutionFromPlurality;
+impl ShouldExecute for AllowUnpaidExecutionFromPlurality {
+	fn should_execute<Call>(
+		origin: &MultiLocation,
+		_top_level: bool,
+		_message: &xcm::v0::Xcm<Call>,
+		_shallow_weight: Weight,
+		_weight_credit: &mut Weight,
+	) -> Result<(), ()> {
+		log::debug!(target: "runtime::should_execute","origin: {:?}", origin);
+		frame_support::ensure!(
+			matches!(origin, MultiLocation::X2(Junction::Parent, Junction::Plurality { .. })),
+			()
+		);
+		log::debug!(target: "runtime::should_execute", "yes");
+		Ok(())
 	}
 }

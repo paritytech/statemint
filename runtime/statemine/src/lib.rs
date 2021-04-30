@@ -554,6 +554,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// Native signed account converter; this just converts an `AccountId32` origin into a normal
 	// `Origin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RococoNetwork, Origin>,
+	// Pass through the multilocation origin of the XCM as the inner value of the origin.
+	XcmPassthrough<Origin>,
 );
 
 parameter_types! {
@@ -571,6 +573,7 @@ pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
 	AllowUnpaidExecutionFrom<IsInVec<AllowUnpaidFrom>>,	// <- Parent gets free execution
+	runtime_common::AllowUnpaidExecutionFromPlurality, // <- council gets free execution
 );
 
 pub struct XcmConfig;
