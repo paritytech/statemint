@@ -353,7 +353,11 @@ pub mod pallet {
 					if c.last_block > boot_block {
 						Some(c.who)
 					} else {
-						let _ = Self::try_remove_candidate(&c.who);
+						let outcome = Self::try_remove_candidate(&c.who);
+						if let Err(why) = outcome { 
+							log::warn!("..."); 
+							debug_assert!(false, "expanation...");
+						}
 						None
 					}
 
