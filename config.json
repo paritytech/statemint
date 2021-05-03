@@ -29,27 +29,11 @@
 			"port": 31200,
 			"balance": "1000000000000000000000",
 			"flags": ["--", "--execution=wasm"]
-		},
-		{
-			"bin": "./target/release/statemint",
-			"chain": "statemint-dev",
-			"id": "300",
-			"wsPort": 9999,
-			"port": 31300,
-			"balance": "1000000000000000000000",
-			"flags": ["--", "--execution=wasm"]
 		}
 	],
 	"simpleParachains": [
 	],
-	"hrmpChannels": [
-		{
-			"sender": 1,
-			"recipient": 300,
-			"maxCapacity": 8,
-			"maxMessageSize": 512
-		}
-	],
+	"hrmpChannels": [],
 	"types": {},
 	"finalization": false
 }
