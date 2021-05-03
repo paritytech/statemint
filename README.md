@@ -119,9 +119,10 @@ Statemint is licensed under [Apache 2](LICENSE).
 
 __Commits:__
 ```
-"git+https://github.com/paritytech/substrate.git?branch=rococo-v1#3ec97a31b285181fb1beab426ee2a8e2cb1188ab"
-"git+https://github.com/paritytech/polkadot?branch=rococo-v1#a67612b3fc4bca05c324032faa9108a414e9be61"
-"git+https://github.com/paritytech/cumulus.git?branch=rococo-v1#651abcedba1d88f5c00c47d2715820c3bfac9c15"
+"git+https://github.com/paritytech/substrate.git?branch=rococo-v1#2be8fcc4236d32786c62f6f27a98e7fe7e550807"
+"git+https://github.com/paritytech/polkadot?branch=rococo-v1#127eb17a25bbe2a9f2731ff11a65d7f8170f2373"
+"git+https://github.com/paritytech/cumulus.git?branch=rococo-v1#da4c3bac6e9584e65740ef5db4dbd2c31c1a91db"
+"git+https://github.com/paritytech/grandpa-bridge-gadget?branch=rococo-v1#b0e5f2da52cc9bc9804a23e111d003413b268faf"
 ```
 
 * **Polkadot launch** can be run by dropping the proper polkadot binary in bin 
