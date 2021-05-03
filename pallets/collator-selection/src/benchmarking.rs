@@ -171,19 +171,19 @@ benchmarks! {
 		<DesiredCandidates<T>>::put(c);
 		register_candidates::<T>(c, r);
 
-		let boot_block: T::BlockNumber = 9u32.into();
+		let kick_block: T::BlockNumber = 9u32.into();
 		let new_block: T::BlockNumber = 20u32.into();
 
-		<BootBlock<T>>::put(boot_block);
+		<KickBlock<T>>::put(kick_block);
 		frame_system::Pallet::<T>::set_block_number(new_block.clone());
 		let pre_length = <Candidates<T>>::get().len();
 
-		assert!(<BootBlock<T>>::get() != new_block.clone());
+		assert!(<KickBlock<T>>::get() != new_block.clone());
 		assert!(<Candidates<T>>::get().len() == c as usize);
 	}: {
 		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
 	} verify {
-		assert!(<BootBlock<T>>::get() == new_block);
+		assert!(<KickBlock<T>>::get() == new_block);
 		if r > 0 {
 			assert!(<Candidates<T>>::get().len() < pre_length);
 		}

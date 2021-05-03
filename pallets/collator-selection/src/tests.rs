@@ -264,16 +264,16 @@ fn session_management_works() {
 }
 
 #[test]
-fn boot_mechanism() {
+fn kick_mechanism() {
 	new_test_ext().execute_with(|| {
 		// add a new collator
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
 		assert_eq!(CollatorSelection::candidates().len(), 2);
 		initialize_to_block(21);
-		assert_eq!(CollatorSelection::boot_block(), 20);
+		assert_eq!(CollatorSelection::kick_block(), 20);
 		assert_eq!(SessionChangeBlock::get(), 20);
-		// 4 authored this block, gets to stay 3 was booted
+		// 4 authored this block, gets to stay 3 was kicked
 		assert_eq!(CollatorSelection::candidates().len(), 1);
 		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 4]);
 		let collator = CandidateInfo {
@@ -282,7 +282,7 @@ fn boot_mechanism() {
 			last_block: 21
 		};
 		assert_eq!(CollatorSelection::candidates(), vec![collator]);
-		// booted collator gets funds back
+		// kicked collator gets funds back
 		assert_eq!(Balances::free_balance(3), 100);
 	});
 }

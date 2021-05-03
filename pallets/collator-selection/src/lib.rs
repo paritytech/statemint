@@ -176,10 +176,10 @@ pub mod pallet {
 	pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
 
-	/// Desired blocks until check if bootable.
+	/// Desired blocks until check if kickable.
 	#[pallet::storage]
-	#[pallet::getter(fn boot_block)]
-	pub type BootBlock<T> = StorageValue<_, <T as frame_system::Config>::BlockNumber, ValueQuery>;
+	#[pallet::getter(fn kick_block)]
+	pub type KickBlock<T> = StorageValue<_, <T as frame_system::Config>::BlockNumber, ValueQuery>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -347,10 +347,10 @@ pub mod pallet {
 		/// This is done on the fly, as frequent as we are told to do so, as the session manager.
 		pub fn assemble_collators() -> Vec<T::AccountId> {
 			let mut collators = Self::invulnerables();
-			let boot_block = Self::boot_block();
+			let kick_block = Self::kick_block();
 			collators.extend(
 				Self::candidates().into_iter().filter_map(|c| {
-					if c.last_block > boot_block {
+					if c.last_block > kick_block {
 						Some(c.who)
 					} else {
 						let outcome = Self::try_remove_candidate(&c.who);
@@ -363,7 +363,7 @@ pub mod pallet {
 
 				}).collect::<Vec<_>>(),
 			);
-			<BootBlock<T>>::put(frame_system::Pallet::<T>::block_number());
+			<KickBlock<T>>::put(frame_system::Pallet::<T>::block_number());
 			collators
 		}
 	}
