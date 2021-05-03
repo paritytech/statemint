@@ -51,23 +51,12 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	assert_eq!(event, &system_event);
 }
 
-fn register_candidates<T: Config>(count: u32, removals: u32) {
+fn register_candidates<T: Config>(count: u32) {
 	let candidates = (0..count).map(|c| account("candidate", c, SEED)).collect::<Vec<_>>();
 	assert!(<CandidacyBond<T>>::get() > 0u32.into(), "Bond cannot be zero!");
-	let mut i = 0;
 	for who in candidates {
 		T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 2u32.into());
-
-		let last_block = if count - i > removals {10u32.into()} else {0u32.into()};
-
-		let candidate = CandidateInfo {
-			who,
-			deposit: T::Currency::minimum_balance(),
-			last_block
-		};
-
-		Candidates::<T>::mutate(|c| {c.push(candidate)})
-		i = i + 1;
+		<CollatorSelection<T>>::register_as_candidate(RawOrigin::Signed(who).into()).unwrap();
 	}
 }
 
@@ -118,7 +107,7 @@ benchmarks! {
 
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c + 1);
-		register_candidates::<T>(c, 0);
+		register_candidates::<T>(c);
 
 		let caller: T::AccountId = whitelisted_caller();
 		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
@@ -134,7 +123,7 @@ benchmarks! {
 		let c in 1 .. T::MaxCandidates::get();
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
-		register_candidates::<T>(c, 0);
+		register_candidates::<T>(c);
 
 		let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
 		whitelist!(leaving);
@@ -148,7 +137,7 @@ benchmarks! {
 		let c in 1 .. T::MaxCandidates::get();
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
-		register_candidates::<T>(c, 0);
+		register_candidates::<T>(c);
 
 		T::Currency::make_free_balance_be(
 			&<CollatorSelection<T>>::account_id(),
@@ -169,10 +158,18 @@ benchmarks! {
 
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
-		register_candidates::<T>(c, r);
+		register_candidates::<T>(c);
 
 		let kick_block: T::BlockNumber = 9u32.into();
 		let new_block: T::BlockNumber = 20u32.into();
+
+		let mut candidates = <Candidates<T>>::get();
+		let non_removals = if c > r { c - r } else { 0 };
+
+		for i in 0..non_removals {
+			candidates[i as usize].last_block = kick_block + 1u32.into();
+		}
+		<Candidates<T>>::put(candidates.clone());
 
 		<KickBlock<T>>::put(kick_block);
 		frame_system::Pallet::<T>::set_block_number(new_block.clone());
