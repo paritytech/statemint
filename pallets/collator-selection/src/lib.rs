@@ -345,26 +345,30 @@ pub mod pallet {
 		/// Assemble the current set of candidates and invulnerables into the next collator set.
 		///
 		/// This is done on the fly, as frequent as we are told to do so, as the session manager.
-		pub fn assemble_collators() -> Vec<T::AccountId> {
+		pub fn assemble_collators(candidates: Vec<T::AccountId>) -> Vec<T::AccountId> {
 			let mut collators = Self::invulnerables();
-			let kick_block = Self::kick_block();
 			collators.extend(
-				Self::candidates().into_iter().filter_map(|c| {
-					if c.last_block > kick_block {
-						Some(c.who)
-					} else {
-						let outcome = Self::try_remove_candidate(&c.who);
-						if let Err(why) = outcome {
-							log::warn!("Failed to remove candidate {:?}", why);
-							debug_assert!(false, "failed to remove candidate {:?}", why);
-						}
-						None
-					}
-
-				}).collect::<Vec<_>>(),
+				candidates.into_iter().collect::<Vec<_>>(),
 			);
-			<KickBlock<T>>::put(frame_system::Pallet::<T>::block_number());
 			collators
+		}
+		/// Kicks out and candidates that did not produce a block in the last session.
+		pub fn kick_stale_candidates(candidates: Vec<CandidateInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>>) -> Vec<T::AccountId> {
+			let kick_block = Self::kick_block();
+			let new_candidates = candidates.into_iter().filter_map(|c| {
+				if c.last_block > kick_block {
+					Some(c.who)
+				} else {
+					let outcome = Self::try_remove_candidate(&c.who);
+					if let Err(why) = outcome {
+						log::warn!("Failed to remove candidate {:?}", why);
+						debug_assert!(false, "failed to remove candidate {:?}", why);
+					}
+					None
+				}
+			}).collect::<Vec<_>>();
+			<KickBlock<T>>::put(frame_system::Pallet::<T>::block_number());
+			new_candidates
 		}
 	}
 
@@ -406,9 +410,11 @@ pub mod pallet {
 				<frame_system::Pallet<T>>::block_number(),
 			);
 
-			let candidates_len_before = Self::candidates().len();
-			let result = Self::assemble_collators();
-			let removed = candidates_len_before - Self::candidates().len();
+			let candidates = Self::candidates();
+			let candidates_len_before = candidates.len();
+			let active_candidates = Self::kick_stale_candidates(candidates);
+			let result = Self::assemble_collators(active_candidates.clone());
+			let removed = candidates_len_before - active_candidates.len();
 
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
 				T::WeightInfo::new_session(candidates_len_before as u32, removed as u32),
