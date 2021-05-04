@@ -50,21 +50,22 @@ use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{
 	BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate,
 };
-use xcm::v0::{Junction, MultiLocation, NetworkId, Xcm};
+use xcm::v0::{Junction, Junction::*, MultiLocation, MultiLocation::*, NetworkId, BodyId, Xcm};
 use xcm_builder::{
 	AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SovereignSignedViaLocation, FixedRateOfConcreteFungible, EnsureXcmOrigin,
 	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds, IsConcrete, NativeAsset,
-	AllowUnpaidExecutionFrom, ParentAsSuperuser,
+	AllowUnpaidExecutionFrom, ParentAsSuperuser, UsingComponents,
 };
 use xcm_executor::{Config, XcmExecutor};
+use pallet_xcm::{XcmPassthrough, EnsureXcm, IsMajorityOfBody};
 
 // A few exports that help ease life for downstream crates.
 use codec::{Decode, Encode};
 use constants::{currency::*, fee::WeightToFee};
 pub use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime, parameter_types, match_type,
 	traits::{Currency, InstanceFilter, KeyOwnerProofSystem, Randomness, IsInVec, All},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
@@ -323,7 +324,15 @@ parameter_types! {
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
 	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
+	pub const UnitBody: BodyId = BodyId::Unit;
 }
+
+// We allow root and the relay council to execute privileged asset operations.
+pub type ForceOrigin =  frame_system::EnsureOneOf<
+	AccountId,
+	frame_system::EnsureRoot<AccountId>,
+	EnsureXcm<IsMajorityOfBody<RelayLocation, UnitBody>>,
+>;
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
@@ -332,7 +341,7 @@ impl pallet_assets::Config for Runtime {
 	type Currency = Balances;
 	// TODO: Change to proportion at least 60% (3/5) of Relay Chain Council.
 	// https://github.com/paritytech/statemint/issues/4
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type ForceOrigin = ForceOrigin;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
@@ -495,7 +504,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 impl parachain_info::Config for Runtime {}
 
 parameter_types! {
-	pub const RococoLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
+	pub const RelayLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
 	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Junction::Parachain (ParachainInfo::parachain_id().into()).into();
@@ -518,7 +527,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<RococoLocation>,
+	IsConcrete<RelayLocation>,
 	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -545,6 +554,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// Native signed account converter; this just converts an `AccountId32` origin into a normal
 	// `Origin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RococoNetwork, Origin>,
+	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
+	XcmPassthrough<Origin>,
 );
 
 parameter_types! {
@@ -555,13 +566,19 @@ parameter_types! {
 	// 1_000_000_000_000 => 1 unit of asset for 1 unit of Weight.
 	// TODO: Should take the actual weight price. This is just 1_000 ROC per second of weight.
 	pub const WeightPrice: (MultiLocation, u128) = (MultiLocation::X1(Junction::Parent), 1_000);
-	pub AllowUnpaidFrom: Vec<MultiLocation> = vec![ MultiLocation::X1(Junction::Parent) ];
+}
+
+match_type! {
+	pub type ParentOrParentsUnitPlurality: impl Contains<MultiLocation> = {
+		X1(Parent) | X2(Parent, Plurality { id: BodyId::Unit, .. })
+	};
 }
 
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
-	AllowUnpaidExecutionFrom<IsInVec<AllowUnpaidFrom>>,	// <- Parent gets free execution
+	AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
+	// ^^^ Parent & its unit plurality gets free execution
 );
 
 pub struct XcmConfig;
@@ -576,7 +593,7 @@ impl Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = FixedRateOfConcreteFungible<WeightPrice, ()>;
+	type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
 	type ResponseHandler = ();	// Don't handle responses for now.
 }
 
