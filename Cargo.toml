@@ -4,7 +4,7 @@ panic = 'unwind'
 [workspace]
 members = [
 	'node',
-	'pallets/collator-selection',
+	'pallets/*',
 	'runtime/statemint',
 	'runtime/statemine',
 ]
