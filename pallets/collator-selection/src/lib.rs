@@ -130,6 +130,9 @@ pub mod pallet {
 		/// Used only for benchmarking.
 		type MaxInvulnerables: Get<u32>;
 
+		// Will be kicked if block is not produced in threshold.
+		type KickThreshold: Get<Self::BlockNumber>;
+
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -175,11 +178,6 @@ pub mod pallet {
 	#[pallet::getter(fn candidacy_bond)]
 	pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
-
-	/// Desired blocks until check if kickable.
-	#[pallet::storage]
-	#[pallet::getter(fn kick_block)]
-	pub type KickBlock<T> = StorageValue<_, <T as frame_system::Config>::BlockNumber, ValueQuery>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -354,9 +352,11 @@ pub mod pallet {
 		}
 		/// Kicks out and candidates that did not produce a block in the last session.
 		pub fn kick_stale_candidates(candidates: Vec<CandidateInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>>) -> Vec<T::AccountId> {
-			let kick_block = Self::kick_block();
+			let now = frame_system::Pallet::<T>::block_number();
+			let kick_threshold = T::KickThreshold::get();
 			let new_candidates = candidates.into_iter().filter_map(|c| {
-				if c.last_block > kick_block {
+				let since_last = now - c.last_block;
+				if since_last < kick_threshold {
 					Some(c.who)
 				} else {
 					let outcome = Self::try_remove_candidate(&c.who);
@@ -367,7 +367,6 @@ pub mod pallet {
 					None
 				}
 			}).collect::<Vec<_>>();
-			<KickBlock<T>>::put(frame_system::Pallet::<T>::block_number());
 			new_candidates
 		}
 	}

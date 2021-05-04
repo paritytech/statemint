@@ -70,16 +70,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
-	fn new_session(c: u32, r: u32, ) -> Weight {
-		(0 as Weight)
-			// Standard Error: 4_511_000
-			.saturating_add((250_017_000 as Weight).saturating_mul(c as Weight))
-			// Standard Error: 4_511_000
-			.saturating_add((183_901_000 as Weight).saturating_mul(r as Weight))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(c as Weight)))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(r as Weight)))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(c as Weight)))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(r as Weight)))
+	fn new_session(r: u32, c: u32, ) -> Weight {
+		(50_005_000 as Weight)
+			// Standard Error: 2_000
+			.saturating_add((8_000 as Weight).saturating_mul(r as Weight))
+			// Standard Error: 2_000
+			.saturating_add((291_000 as Weight).saturating_mul(c as Weight))
+			.saturating_add(T::DbWeight::get().reads(3 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 }
 
@@ -121,15 +119,13 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
-	fn new_session(c: u32, r: u32, ) -> Weight {
-		(0 as Weight)
-			// Standard Error: 4_511_000
-			.saturating_add((250_017_000 as Weight).saturating_mul(c as Weight))
-			// Standard Error: 4_511_000
-			.saturating_add((183_901_000 as Weight).saturating_mul(r as Weight))
-			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(c as Weight)))
-			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(r as Weight)))
-			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(c as Weight)))
-			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(r as Weight)))
+	fn new_session(r: u32, c: u32, ) -> Weight {
+		(50_005_000 as Weight)
+			// Standard Error: 2_000
+			.saturating_add((8_000 as Weight).saturating_mul(r as Weight))
+			// Standard Error: 2_000
+			.saturating_add((291_000 as Weight).saturating_mul(c as Weight))
+			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 }

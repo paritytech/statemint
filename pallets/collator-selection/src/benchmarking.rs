@@ -152,38 +152,35 @@ benchmarks! {
 	}
 
 	// worse case is on new session.
+	// TODO review this benchmark
 	new_session {
-		let c in 1 .. T::MaxCandidates::get();
 		let r in 1 .. T::MaxCandidates::get();
+		let c in 1 .. T::MaxCandidates::get();
 
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
+		frame_system::Pallet::<T>::set_block_number(0u32.into());
 		register_candidates::<T>(c);
 
-		let kick_block: T::BlockNumber = 9u32.into();
 		let new_block: T::BlockNumber = 20u32.into();
 
 		let mut candidates = <Candidates<T>>::get();
 		let non_removals = if c > r { c - r } else { 0 };
 
 		for i in 0..non_removals {
-			candidates[i as usize].last_block = kick_block + 1u32.into();
+			candidates[i as usize].last_block = new_block;
 		}
 		<Candidates<T>>::put(candidates.clone());
 
-		<KickBlock<T>>::put(kick_block);
-		frame_system::Pallet::<T>::set_block_number(new_block.clone());
 		let pre_length = <Candidates<T>>::get().len();
+		frame_system::Pallet::<T>::set_block_number(new_block.clone());
 
-		assert!(<KickBlock<T>>::get() != new_block.clone());
 		assert!(<Candidates<T>>::get().len() == c as usize);
+
 	}: {
 		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
 	} verify {
-		assert!(<KickBlock<T>>::get() == new_block);
-		if r > 0 {
-			assert!(<Candidates<T>>::get().len() < pre_length);
-		}
+		assert!(<Candidates<T>>::get().len() <= pre_length);
 	}
 }
 

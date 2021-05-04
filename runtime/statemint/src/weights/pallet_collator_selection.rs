@@ -37,9 +37,9 @@ use sp_std::marker::PhantomData;
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightInfo<T> {
 	fn set_invulnerables(b: u32, ) -> Weight {
-		(27_753_000 as Weight)
-			// Standard Error: 1_000
-			.saturating_add((127_000 as Weight).saturating_mul(b as Weight))
+		(36_147_000 as Weight)
+			// Standard Error: 22_000
+			.saturating_add((50_000 as Weight).saturating_mul(b as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn set_desired_candidates() -> Weight {
@@ -51,35 +51,33 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn register_as_candidate(c: u32, ) -> Weight {
-		(90_444_000 as Weight)
-			// Standard Error: 0
-			.saturating_add((272_000 as Weight).saturating_mul(c as Weight))
+		(90_380_000 as Weight)
+			// Standard Error: 8_000
+			.saturating_add((314_000 as Weight).saturating_mul(c as Weight))
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn leave_intent(c: u32, ) -> Weight {
-		(61_110_000 as Weight)
+		(65_617_000 as Weight)
 			// Standard Error: 4_000
-			.saturating_add((297_000 as Weight).saturating_mul(c as Weight))
+			.saturating_add((325_000 as Weight).saturating_mul(c as Weight))
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn note_author(c: u32, ) -> Weight {
-		(115_777_000 as Weight)
-			// Standard Error: 3_000
-			.saturating_add((283_000 as Weight).saturating_mul(c as Weight))
+		(138_742_000 as Weight)
+			// Standard Error: 4_000
+			.saturating_add((255_000 as Weight).saturating_mul(c as Weight))
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
-	fn new_session(c: u32, r: u32, ) -> Weight {
-		(0 as Weight)
-			// Standard Error: 3_673_000
-			.saturating_add((231_869_000 as Weight).saturating_mul(c as Weight))
-			// Standard Error: 3_673_000
-			.saturating_add((170_266_000 as Weight).saturating_mul(r as Weight))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(c as Weight)))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(r as Weight)))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(c as Weight)))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(r as Weight)))
+	fn new_session(r: u32, c: u32, ) -> Weight {
+		(59_461_000 as Weight)
+			// Standard Error: 4_000
+			.saturating_add((2_000 as Weight).saturating_mul(r as Weight))
+			// Standard Error: 4_000
+			.saturating_add((291_000 as Weight).saturating_mul(c as Weight))
+			.saturating_add(T::DbWeight::get().reads(3 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 }

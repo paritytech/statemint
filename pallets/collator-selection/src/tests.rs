@@ -268,7 +268,6 @@ fn kick_mechanism() {
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
 		assert_eq!(CollatorSelection::candidates().len(), 2);
 		initialize_to_block(21);
-		assert_eq!(CollatorSelection::kick_block(), 20);
 		assert_eq!(SessionChangeBlock::get(), 20);
 		// 4 authored this block, gets to stay 3 was kicked
 		assert_eq!(CollatorSelection::candidates().len(), 1);
