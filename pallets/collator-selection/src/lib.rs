@@ -412,8 +412,9 @@ pub mod pallet {
 			let candidates = Self::candidates();
 			let candidates_len_before = candidates.len();
 			let active_candidates = Self::kick_stale_candidates(candidates);
-			let result = Self::assemble_collators(active_candidates.clone());
-			let removed = candidates_len_before - active_candidates.len();
+			let active_candidates_len = active_candidates.len();
+			let result = Self::assemble_collators(active_candidates);
+			let removed = candidates_len_before - active_candidates_len;
 
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
 				T::WeightInfo::new_session(candidates_len_before as u32, removed as u32),
