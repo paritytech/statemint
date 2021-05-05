@@ -27,6 +27,7 @@ use frame_support::{
 	traits::{Currency, Get, EnsureOrigin},
 };
 use pallet_authorship::EventHandler;
+use pallet_session::SessionManager;
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -75,7 +76,7 @@ benchmarks! {
 		assert_last_event::<T>(Event::NewInvulnerables(new_invulnerables).into());
 	}
 
-	set_max_candidates {
+	set_desired_candidates {
 		let max: u32 = 999;
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
@@ -133,6 +134,11 @@ benchmarks! {
 
 	// worse case is paying a non-existing candidate account.
 	note_author {
+		let c in 1 .. T::MaxCandidates::get();
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(c);
+		register_candidates::<T>(c);
+
 		T::Currency::make_free_balance_be(
 			&<CollatorSelection<T>>::account_id(),
 			T::Currency::minimum_balance() * 2u32.into(),
@@ -143,6 +149,38 @@ benchmarks! {
 		<CollatorSelection<T> as EventHandler<_, _>>::note_author(author.clone())
 	} verify {
 		assert!(T::Currency::free_balance(&author) > 0u32.into());
+	}
+
+	// worse case is on new session.
+	// TODO review this benchmark
+	new_session {
+		let r in 1 .. T::MaxCandidates::get();
+		let c in 1 .. T::MaxCandidates::get();
+
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(c);
+		frame_system::Pallet::<T>::set_block_number(0u32.into());
+		register_candidates::<T>(c);
+
+		let new_block: T::BlockNumber = 20u32.into();
+
+		let mut candidates = <Candidates<T>>::get();
+		let non_removals = if c > r { c - r } else { 0 };
+
+		for i in 0..non_removals {
+			candidates[i as usize].last_block = new_block;
+		}
+		<Candidates<T>>::put(candidates.clone());
+
+		let pre_length = <Candidates<T>>::get().len();
+		frame_system::Pallet::<T>::set_block_number(new_block.clone());
+
+		assert!(<Candidates<T>>::get().len() == c as usize);
+
+	}: {
+		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
+	} verify {
+		assert!(<Candidates<T>>::get().len() <= pre_length);
 	}
 }
 

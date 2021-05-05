@@ -661,6 +661,8 @@ impl pallet_collator_selection::Config for Runtime {
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
+	// should be a multiple of session or things will get inconsistent
+	type KickThreshold = Period;
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
@@ -736,15 +738,15 @@ pub type Executive = frame_executive::Executive<
 >;
 
 impl_runtime_apis! {
-	// impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
-	// 	fn slot_duration() -> sp_consensus_aura::SlotDuration {
-	// 		sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
-	// 	}
+	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
+		fn slot_duration() -> sp_consensus_aura::SlotDuration {
+			sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
+		}
 
-	// 	fn authorities() -> Vec<AuraId> {
-	// 		CollatorSelection::Collators()
-	// 	}
-	// }
+		fn authorities() -> Vec<AuraId> {
+			Aura::authorities()
+		}
+	}
 
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
