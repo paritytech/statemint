@@ -42,7 +42,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_system::{
-	limits::{BlockLength, BlockWeights},
+	EnsureOneOf, EnsureRoot, EnsureSignedBy,limits::{BlockLength, BlockWeights},
 };
 
 // Polkadot imports
@@ -54,7 +54,7 @@ use xcm::v0::{Junction, Junction::*, MultiLocation, MultiLocation::*, NetworkId,
 use xcm_builder::{
 	AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SovereignSignedViaLocation, FixedRateOfConcreteFungible, EnsureXcmOrigin,
+	SovereignSignedViaLocation, EnsureXcmOrigin,
 	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds, IsConcrete, NativeAsset,
 	AllowUnpaidExecutionFrom, ParentAsSuperuser, UsingComponents,
 };
@@ -329,9 +329,9 @@ parameter_types! {
 }
 
 // We allow root and the relay council to execute privileged asset operations.
-pub type ForceOrigin =  frame_system::EnsureOneOf<
+pub type ForceOrigin =  EnsureOneOf<
 	AccountId,
-	frame_system::EnsureRoot<AccountId>,
+	EnsureRoot<AccountId>,
 	EnsureXcm<IsMajorityOfBody<RelayLocation, UnitBody>>,
 >;
 
@@ -508,7 +508,7 @@ parameter_types! {
 	pub const RelayLocation: MultiLocation = X1(Parent);
 	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
-	pub Ancestry: MultiLocation = Junction::Parachain (ParachainInfo::parachain_id().into()).into();
+	pub Ancestry: MultiLocation = Junction::Parachain(ParachainInfo::parachain_id().into()).into();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -637,7 +637,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 impl cumulus_pallet_dmp_queue::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
 parameter_types! {
@@ -684,7 +684,7 @@ frame_support::ord_parameter_types! {
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
-	type UpdateOrigin = frame_system::EnsureSignedBy<RelayChainCouncilOrigin, AccountId>;
+	type UpdateOrigin = EnsureSignedBy<RelayChainCouncilOrigin, AccountId>;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
