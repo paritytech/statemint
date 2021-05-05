@@ -350,7 +350,7 @@ pub mod pallet {
 			);
 			collators
 		}
-		/// Kicks out and candidates that did not produce a block in the last session.
+		/// Kicks out and candidates that did not produce a block in the kick threshold.
 		pub fn kick_stale_candidates(candidates: Vec<CandidateInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>>) -> Vec<T::AccountId> {
 			let now = frame_system::Pallet::<T>::block_number();
 			let kick_threshold = T::KickThreshold::get();
