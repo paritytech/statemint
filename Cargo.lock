@@ -4434,6 +4434,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-assets",
+ "pallet-authorship",
  "pallet-balances",
  "pallet-transaction-payment",
  "parity-scale-codec",
