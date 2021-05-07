@@ -48,7 +48,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_std::prelude::*;
-use codec::{Encode, Decode};
+use codec::{Encode, Decode, EncodeLike};
 use frame_support::{
 	decl_storage, decl_module,
 	DefaultNoBound,
@@ -66,7 +66,7 @@ use sp_runtime::{
 	},
 	traits::{
 		Saturating, SignedExtension, SaturatedConversion, Convert, Dispatchable,
-		DispatchInfoOf, PostDispatchInfoOf, Zero,
+		DispatchInfoOf, PostDispatchInfoOf, Zero, One,
 	},
 };
 use pallet_balances::NegativeImbalance;
@@ -80,16 +80,15 @@ use frame_support::traits::tokens::{fungibles::{Balanced, Inspect, CreditOf}, Wi
 // pub use types::{InclusionFee, FeeDetails, RuntimeDispatchInfo};
 
 type BalanceOf<T> = <<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance;
-type AssetBalanceOf<T> = <<T as Config>::Fungibles as Inspect<T>>::Balance;
-type AssetIdOf<T> = <<T as Config>::Fungibles as Inspect<T>>::AssetId;
-// type NegativeImbalanceOf<C, T> =
-// 	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+type AssetBalanceOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
+type AssetIdOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
+type LiquidityInfoOf<T> = <<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo;
 
 #[derive(Encode, Decode, DefaultNoBound)]
 pub enum InitialPayment<T: Config> {
 	Nothing,
-	Native(NegativeImbalance<T>),
-	Asset((AssetIdOf<T>, AssetBalanceOf<T>)),
+	Native(LiquidityInfoOf<T>),
+	Asset(CreditOf<T::AccountId, T::Fungibles>),
 }
 
 pub use pallet::*;
@@ -110,8 +109,8 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_transaction_payment::Config + pallet_balances::Config + pallet_authorship::Config {
-		type Fungibles: Balanced<Self>;
+	pub trait Config: frame_system::Config + pallet_transaction_payment::Config + pallet_balances::Config + pallet_authorship::Config + pallet_assets::Config {
+		type Fungibles: Balanced<Self::AccountId>;
 	}
 
 	#[pallet::pallet]
@@ -125,9 +124,18 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {}
 }
 
-impl<T: Config> Pallet<T> {
-	fn to_asset_balance(b: BalanceOf<T>, asset_id: AssetIdOf<T>) -> Result<AssetBalanceOf<T>, ()> {
-		Ok(Zero::zero())
+impl<T: Config> Pallet<T>
+{
+	fn to_asset_balance(balance: BalanceOf<T>, asset_id: AssetIdOf<T>) -> Result<AssetBalanceOf<T>, ()> {
+		// TODO: needs to be implemented in the assets pallet
+		// let ed = <T as pallet_balances::Config>::ExistentialDeposit::get().max(One::one());
+		// let asset = pallet_assets::Asset::<T>::get(asset_id).ok_or(|| ())?;
+		// if asset.is_sufficient {
+		// 	Ok(FixedU128::saturating_from_rational(asset.min_balance, ed).saturating_mul_int(balance).into())
+		// } else {
+		// 	Err(())
+		// }
+		Ok(One::one())
 	}
 }
 
@@ -139,7 +147,8 @@ pub struct ChargeAssetTxPayment<T: Config>(#[codec(compact)] BalanceOf<T>, Optio
 impl<T: Config> ChargeAssetTxPayment<T> where
 	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
 	BalanceOf<T>: Send + Sync + FixedPointOperand,
-	T: Config + frame_support::traits::fungibles::Unbalanced<<T as frame_system::Config>::AccountId> + frame_support::traits::fungibles::Inspect<T> + frame_support::traits::fungibles::Unbalanced<T>,
+	AssetIdOf<T>: Send + Sync,
+	AssetBalanceOf<T>: Send + Sync,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(fee: BalanceOf<T>, asset_id: Option<AssetIdOf<T>>) -> Self {
@@ -169,16 +178,19 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 		let maybe_asset_id  = self.1;
 		if let Some(asset_id) = maybe_asset_id {
 			// TODO: implement fee payment via assets pallet
-			let converted_fee = Pallet::<T>::to_asset_balance(fee, asset_id).map_err(|_| InvalidTransaction::Payment.into())?;
-			let can_withdraw = <T as Inspect<T>>::can_withdraw(asset_id, who, converted_fee);
+			let converted_fee = Pallet::<T>::to_asset_balance(fee, asset_id)
+				.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
+			let can_withdraw = <T::Fungibles as Inspect<T::AccountId>>::can_withdraw(asset_id, who, converted_fee);
 			if !matches!(can_withdraw, WithdrawConsequence::Success) {
 				return Err(InvalidTransaction::Payment.into());
 			}
-			<T as Balanced<T>>::withdraw(asset_id, who, converted_fee)
-				.map(|i| (fee, InitialPayment::Asset((i.asset(), i.peek()))))
+			<T::Fungibles as Balanced<T::AccountId>>::withdraw(asset_id, who, converted_fee)
+				.map(|i| (fee, InitialPayment::Asset(i)))
+				.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
 		} else {
 			<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::withdraw_fee(who, call, info, fee, tip)
-			.map(|i| (fee, InitialPayment::Native(i)))
+				.map(|i| (fee, InitialPayment::Native(i)))
+				.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
 		}
 	}
 
@@ -206,27 +218,31 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 		_post_info: &PostDispatchInfoOf<T::Call>,
 		corrected_fee: BalanceOf<T>,
 		tip: BalanceOf<T>,
-		paid: CreditOf<T::AccountId, T>,
+		paid: CreditOf<T::AccountId, T::Fungibles>,
 	) -> Result<(), TransactionValidityError> {
-		let converted_fee = Pallet::<T>::to_asset_balance(corrected_fee, paid.asset()).map_err(|_| InvalidTransaction::Payment.into())?;
+		let converted_fee = Pallet::<T>::to_asset_balance(corrected_fee, paid.asset())
+		.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
 		// Calculate how much refund we should return
 		let (refund, final_fee) = paid.split(converted_fee);
 		// refund to the the account that paid the fees. If this fails, the
 		// account might have dropped below the existential balance. In
 		// that case we don't refund anything.
-		// TODO: what to in case this errors?
-		<T as Balanced<T>>::resolve(who, refund)?;
+		// TODO: what to do in case this errors?
+		let _res = <T::Fungibles as Balanced<T::AccountId>>::resolve(who, refund);
 		
 		let author = pallet_authorship::Module::<T>::author();
-		<T as Balanced<T>>::resolve(author, final_fee)?;
+		// TODO: what to do in case paying the author fails (e.g. because `fee < min_balance`)
+		<T::Fungibles as Balanced<T::AccountId>>::resolve(&author, final_fee)
+			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
 		Ok(())
 	}
 }
 
-impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T> {
+impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T>
+{
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "ChargeAssetTxPayment<{:?}, {:?}>", self.0, self.1)
+		write!(f, "ChargeAssetTxPayment<{:?}, {:?}>", self.0, self.1.encode())
 	}
 	#[cfg(not(feature = "std"))]
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
@@ -237,7 +253,8 @@ impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T> {
 impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand,
 	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
-	T: Config + frame_support::traits::fungibles::Unbalanced<<T as frame_system::Config>::AccountId>,
+	AssetIdOf<T>: Send + Sync,
+	AssetBalanceOf<T>: Send + Sync,
 {
 	const IDENTIFIER: &'static str = "ChargeAssetTxPayment";
 	type AccountId = T::AccountId;
@@ -296,8 +313,9 @@ impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 			InitialPayment::Native(imbalance) => {
 				<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::correct_and_deposit_fee(&who, info, post_info, actual_fee, tip, imbalance)?;
 			},
-			InitialPayment::Asset((asset_id, amount)) => {
-				let credit = CreditOf::<T::AccountId, T::Fungibles>::new(asset_id, amount);
+			// InitialPayment::Asset((asset_id, amount)) => {
+			InitialPayment::Asset(credit) => {
+				// let credit = <T::Fungibles as Balanced<T::AccountId>>::issue(asset_id, amount);
 				Self::correct_and_deposit_fee(&who, info, post_info, actual_fee, tip, credit)?;
 			},
 			// TODO: just assert that actual_fee is also zero?
