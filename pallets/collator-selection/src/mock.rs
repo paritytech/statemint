@@ -194,6 +194,7 @@ impl Config for Test {
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
+	type KickThreshold = Period;
 	type WeightInfo = ();
 }
 
@@ -234,7 +235,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 pub fn initialize_to_block(n: u64) {
 	for i in System::block_number()+1..=n {
-		println!("init {}", i);
 		System::set_block_number(i);
 		<AllPallets as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
 	}
