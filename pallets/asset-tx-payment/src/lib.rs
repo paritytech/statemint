@@ -124,18 +124,14 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {}
 }
 
-impl<T: Config> Pallet<T>
+impl<T: Config> Pallet<T> where
+	BalanceOf<T>: FixedPointOperand + Into<AssetBalanceOf<T>>,
+	AssetBalanceOf<T>: FixedPointOperand,
 {
 	fn to_asset_balance(balance: BalanceOf<T>, asset_id: AssetIdOf<T>) -> Result<AssetBalanceOf<T>, ()> {
-		// TODO: needs to be implemented in the assets pallet
-		// let ed = <T as pallet_balances::Config>::ExistentialDeposit::get().max(One::one());
-		// let asset = pallet_assets::Asset::<T>::get(asset_id).ok_or(|| ())?;
-		// if asset.is_sufficient {
-		// 	Ok(FixedU128::saturating_from_rational(asset.min_balance, ed).saturating_mul_int(balance).into())
-		// } else {
-		// 	Err(())
-		// }
-		Ok(One::one())
+		let res = pallet_assets::BalanceToAssetBalance::<T, BalanceOf<T>, <T as pallet_balances::Config>::ExistentialDeposit>::to_asset_balance(balance, asset_id)
+			.map_err(|_| ());
+		res
 	}
 }
 
@@ -146,9 +142,9 @@ pub struct ChargeAssetTxPayment<T: Config>(#[codec(compact)] BalanceOf<T>, Optio
 
 impl<T: Config> ChargeAssetTxPayment<T> where
 	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
-	BalanceOf<T>: Send + Sync + FixedPointOperand,
+	BalanceOf<T>: Send + Sync + FixedPointOperand + Into<AssetBalanceOf<T>>,
 	AssetIdOf<T>: Send + Sync,
-	AssetBalanceOf<T>: Send + Sync,
+	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(fee: BalanceOf<T>, asset_id: Option<AssetIdOf<T>>) -> Self {
@@ -251,10 +247,10 @@ impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T>
 }
 
 impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
-	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand,
+	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + Into<AssetBalanceOf<T>>,
 	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
 	AssetIdOf<T>: Send + Sync,
-	AssetBalanceOf<T>: Send + Sync,
+	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 {
 	const IDENTIFIER: &'static str = "ChargeAssetTxPayment";
 	type AccountId = T::AccountId;
