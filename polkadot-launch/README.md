@@ -4,6 +4,7 @@ Simple CLI tool to launch a local [Polkadot](https://github.com/paritytech/polka
 
 ## Notes
 
+- You must use node.js v14.x.x
 - These is adapted instructions for quickly starting statemint. For the original README consult https://github.com/paritytech/polkadot-launch#readme
 
 ## Building binaries
@@ -49,4 +50,13 @@ Modify the `config.json` in this repo's root to point to your polkadot binary bu
 cd polkadot-launch
 yarn
 yarn start
+```
+
+### Tracking logging
+
+stdout node log output is piped to files in this directory: `alice.log`, `bob.log`, `charlie.log`, `9988.log`.
+
+```bash
+cd polkadot-launch 
+tail -f alice.log
 ```
