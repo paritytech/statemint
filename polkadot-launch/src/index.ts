@@ -79,11 +79,9 @@ async function main() {
 	for (const node of config.relaychain.nodes) {
 		await addAuthority(`${chain}.json`, node.name);
 	}
-	console.log('Generating raw chain spec')
 	await generateChainSpecRaw(relay_chain_bin, chain);
 	const spec = resolve(`${chain}-raw.json`);
 	const { name, wsPort, port, flags } = config.relaychain.nodes[0];
-	console.log('Starting relay chain node and attempting to connect with ApiPromise')
 	startNode(relay_chain_bin, name, wsPort, port, spec, flags);
 	// Connect to the first relay chain node to submit the extrinsic.
 	let relayChainApi: ApiPromise = await connect(
@@ -96,7 +94,7 @@ async function main() {
 			const { name, wsPort, port, flags } = node;
 			console.log(`Starting ${name}...`);
 			let addresses = await listenAddresses(relayChainApi)
-			//await addBootNodes(`${chain}-raw.json`, addresses);
+			await addBootNodes(`${chain}-raw.json`, addresses);
 
 			// We spawn a `child_process` starting a node, and then wait until we
 			// able to connect to it using PolkadotJS in order to know its running.
