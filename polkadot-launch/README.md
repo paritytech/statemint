@@ -5,6 +5,7 @@ Simple CLI tool to launch a local [Polkadot](https://github.com/paritytech/polka
 ## Notes
 
 - You must use node.js v14.x.x
+- MacOs users: make sure your machines firewall is disabled. Choose Apple menu  > System Preferences, click Security & Privacy, then click Firewall and make sure it is off.
 - These is adapted instructions for quickly starting statemint. For the original README consult https://github.com/paritytech/polkadot-launch#readme
 
 ## Building binaries
@@ -52,7 +53,7 @@ yarn
 yarn start
 ```
 
-### Tracking logging
+### Node logging
 
 Each node's `stdout` is piped to files in this directory: `alice.log`, `bob.log`, `charlie.log`, `9988.log`.
 
