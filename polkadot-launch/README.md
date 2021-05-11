@@ -54,9 +54,9 @@ yarn start
 
 ### Tracking logging
 
-stdout node log output is piped to files in this directory: `alice.log`, `bob.log`, `charlie.log`, `9988.log`.
+Each node's `stdout` is piped to files in this directory: `alice.log`, `bob.log`, `charlie.log`, `9988.log`.
 
 ```bash
-cd polkadot-launch 
+cd polkadot-launch
 tail -f alice.log
 ```
