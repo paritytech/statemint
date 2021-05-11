@@ -36,46 +36,46 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn set_invulnerables(b: u32, ) -> Weight {
-		(28_060_000 as Weight)
-			// Standard Error: 1_000
-			.saturating_add((118_000 as Weight).saturating_mul(b as Weight))
+		(17_787_000 as Weight)
+			// Standard Error: 0
+			.saturating_add((67_000 as Weight).saturating_mul(b as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn set_desired_candidates() -> Weight {
-		(25_000_000 as Weight)
+		(15_632_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn set_candidacy_bond() -> Weight {
-		(25_000_000 as Weight)
+		(15_926_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn register_as_candidate(c: u32, ) -> Weight {
-		(82_496_000 as Weight)
+		(69_356_000 as Weight)
 			// Standard Error: 1_000
-			.saturating_add((266_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
+			.saturating_add((226_000 as Weight).saturating_mul(c as Weight))
+			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn leave_intent(c: u32, ) -> Weight {
-		(65_836_000 as Weight)
-			// Standard Error: 2_000
-			.saturating_add((273_000 as Weight).saturating_mul(c as Weight))
+		(49_005_000 as Weight)
+			// Standard Error: 0
+			.saturating_add((204_000 as Weight).saturating_mul(c as Weight))
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn note_author(c: u32, ) -> Weight {
-		(108_730_000 as Weight)
-			// Standard Error: 3_000
-			.saturating_add((286_000 as Weight).saturating_mul(c as Weight))
+		(85_728_000 as Weight)
+			// Standard Error: 2_000
+			.saturating_add((234_000 as Weight).saturating_mul(c as Weight))
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
 	fn new_session(r: u32, c: u32, ) -> Weight {
-		(50_005_000 as Weight)
+		(61_183_000 as Weight)
 			// Standard Error: 2_000
-			.saturating_add((8_000 as Weight).saturating_mul(r as Weight))
+			.saturating_add((36_000 as Weight).saturating_mul(r as Weight))
 			// Standard Error: 2_000
-			.saturating_add((291_000 as Weight).saturating_mul(c as Weight))
+			.saturating_add((317_000 as Weight).saturating_mul(c as Weight))
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -85,46 +85,46 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	fn set_invulnerables(b: u32, ) -> Weight {
-		(28_060_000 as Weight)
-			// Standard Error: 1_000
-			.saturating_add((118_000 as Weight).saturating_mul(b as Weight))
+		(17_787_000 as Weight)
+			// Standard Error: 0
+			.saturating_add((67_000 as Weight).saturating_mul(b as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn set_desired_candidates() -> Weight {
-		(25_000_000 as Weight)
+		(15_632_000 as Weight)
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn set_candidacy_bond() -> Weight {
-		(25_000_000 as Weight)
+		(15_926_000 as Weight)
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn register_as_candidate(c: u32, ) -> Weight {
-		(82_496_000 as Weight)
+		(69_356_000 as Weight)
 			// Standard Error: 1_000
-			.saturating_add((266_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
+			.saturating_add((226_000 as Weight).saturating_mul(c as Weight))
+			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn leave_intent(c: u32, ) -> Weight {
-		(65_836_000 as Weight)
-			// Standard Error: 2_000
-			.saturating_add((273_000 as Weight).saturating_mul(c as Weight))
+		(49_005_000 as Weight)
+			// Standard Error: 0
+			.saturating_add((204_000 as Weight).saturating_mul(c as Weight))
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn note_author(c: u32, ) -> Weight {
-		(108_730_000 as Weight)
-			// Standard Error: 3_000
-			.saturating_add((286_000 as Weight).saturating_mul(c as Weight))
+		(85_728_000 as Weight)
+			// Standard Error: 2_000
+			.saturating_add((234_000 as Weight).saturating_mul(c as Weight))
 			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
 	fn new_session(r: u32, c: u32, ) -> Weight {
-		(50_005_000 as Weight)
+		(61_183_000 as Weight)
 			// Standard Error: 2_000
-			.saturating_add((8_000 as Weight).saturating_mul(r as Weight))
+			.saturating_add((36_000 as Weight).saturating_mul(r as Weight))
 			// Standard Error: 2_000
-			.saturating_add((291_000 as Weight).saturating_mul(c as Weight))
+			.saturating_add((317_000 as Weight).saturating_mul(c as Weight))
 			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
