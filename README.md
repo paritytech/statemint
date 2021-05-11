@@ -51,8 +51,8 @@ back ends would be a great contribution, not only for Statemint.
 
 The deposits and fees in the Statemint runtime are set to 10% of the levels of the Relay Chain.
 That is, generally speaking, transaction fees should be approximately\* 1/10 of what they would be
-on the Relay Chain (and likewise for deposits such as proxy and multisig). The exception here is the
-_existential deposit,_ which remains equivalent to the Relay Chain's for user sanity.
+on the Relay Chain (and likewise for deposits such as proxy and multisig). The _existential
+deposit_ will also be 1/10 of its Relay Chain value.
 
 \* They will not be exactly 1/10. Parachains have lower weight limits per block than the Relay
 Chain, and fees change depending on block fullness. So if Statemint blocks are more full than the
