@@ -73,14 +73,17 @@ async function main() {
 		process.exit();
 	}
 	const chain = config.relaychain.chain;
+	console.log('Generating chain spec')
 	await generateChainSpec(relay_chain_bin, chain);
 	clearAuthorities(`${chain}.json`);
 	for (const node of config.relaychain.nodes) {
 		await addAuthority(`${chain}.json`, node.name);
 	}
+	console.log('Generating raw chain spec')
 	await generateChainSpecRaw(relay_chain_bin, chain);
 	const spec = resolve(`${chain}-raw.json`);
 	const { name, wsPort, port, flags } = config.relaychain.nodes[0];
+	console.log('Starting relay chain node and attempting to connect with ApiPromise')
 	startNode(relay_chain_bin, name, wsPort, port, spec, flags);
 	// Connect to the first relay chain node to submit the extrinsic.
 	let relayChainApi: ApiPromise = await connect(
@@ -99,7 +102,6 @@ async function main() {
 			// able to connect to it using PolkadotJS in order to know its running.
 			startNode(relay_chain_bin, name, wsPort, port, spec, flags);
 		}
-	
 	}
 
 
@@ -228,4 +230,4 @@ process.on("SIGINT", function () {
 	process.exit(2);
 });
 
-main();
+main().catch(console.error).finally(console.log);

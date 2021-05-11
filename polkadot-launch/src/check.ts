@@ -5,7 +5,7 @@ export function checkConfig(config: LaunchConfig) {
 	if (!config) {
 		return false;
 	}
-	
+
 	if (!config.relaychain) {
 		console.error("Missing `relaychain` object");
 		return false;
