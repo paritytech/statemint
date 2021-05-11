@@ -13,7 +13,7 @@ Simple CLI tool to launch a local [Polkadot](https://github.com/paritytech/polka
 To use polkadot-launch, you need to have binary files for a `polkadot` relay chain and a
 `statemint` collator.
 
-You can generate these files by cloning the `rococo-v1` branch of these projects and building them
+You can generate these files by cloning the `statemint` branch of these projects and building them
 with the specific flags below:
 
 ```bash
