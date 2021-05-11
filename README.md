@@ -51,8 +51,8 @@ back ends would be a great contribution, not only for Statemint.
 
 The deposits and fees in the Statemint runtime are set to 10% of the levels of the Relay Chain.
 That is, generally speaking, transaction fees should be approximately\* 1/10 of what they would be
-on the Relay Chain (and likewise for deposits such as proxy and multisig). The exception here is the
-_existential deposit,_ which remains equivalent to the Relay Chain's for user sanity.
+on the Relay Chain (and likewise for deposits such as proxy and multisig). The _existential
+deposit_ will also be 1/10 of its Relay Chain value.
 
 \* They will not be exactly 1/10. Parachains have lower weight limits per block than the Relay
 Chain, and fees change depending on block fullness. So if Statemint blocks are more full than the
@@ -119,10 +119,10 @@ Statemint is licensed under [Apache 2](LICENSE).
 
 __Commits:__
 ```
-"git+https://github.com/paritytech/substrate.git?branch=rococo-v1#2be8fcc4236d32786c62f6f27a98e7fe7e550807"
-"git+https://github.com/paritytech/polkadot?branch=rococo-v1#127eb17a25bbe2a9f2731ff11a65d7f8170f2373"
-"git+https://github.com/paritytech/cumulus.git?branch=rococo-v1#da4c3bac6e9584e65740ef5db4dbd2c31c1a91db"
-"git+https://github.com/paritytech/grandpa-bridge-gadget?branch=rococo-v1#b0e5f2da52cc9bc9804a23e111d003413b268faf"
+"git+https://github.com/paritytech/polkadot?branch=statemint#11d55446f306eb72c8239349e4803109a5d5fba0"
+"git+https://github.com/paritytech/cumulus.git?branch=statemint#e7a5ce791e3f389f8026a9a850e324fb05fce0b8"
+"git+https://github.com/paritytech/substrate.git?branch=statemint#ec180313e410915ed5e319358628260f9d1f3b53"
+"git+https://github.com/paritytech/grandpa-bridge-gadget?branch=statemint#a063d033ded6205389112d03c8eb2000c6fab373"
 ```
 
 * **Polkadot launch** can be run by dropping the proper polkadot binary in bin 
