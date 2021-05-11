@@ -340,8 +340,6 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	type AssetId = u32;
 	type Currency = Balances;
-	// TODO: Change to proportion at least 60% (3/5) of Relay Chain Council.
-	// https://github.com/paritytech/statemint/issues/4
 	type ForceOrigin = ForceOrigin;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
@@ -673,18 +671,16 @@ parameter_types! {
 	pub const MaxInvulnerables: u32 = 100;
 }
 
-frame_support::ord_parameter_types! {
-	pub const RelayChainCouncilOrigin: AccountId = <
-		frame_support::PalletId
-		as
-		AccountIdConversion<AccountId>
-	>::into_account(&frame_support::PalletId(*b"TODOTODO"));
-}
+pub type UpdateOrigin = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	EnsureXcm<IsMajorityOfBody<RelayLocation, UnitBody>>,
+>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
-	type UpdateOrigin = EnsureSignedBy<RelayChainCouncilOrigin, AccountId>;
+	type UpdateOrigin = UpdateOrigin;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
