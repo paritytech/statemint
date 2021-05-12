@@ -224,6 +224,39 @@ fn authorship_event_handler() {
 }
 
 #[test]
+fn fees_under_ed_work() {
+	new_test_ext().execute_with(|| {
+		// check reserve balance on chain init
+		assert_eq!(Balances::reserved_balance(CollatorSelection::account_id()), <Balances as Currency<_>>::minimum_balance());
+		// put some money into the pot under ED
+		Balances::make_free_balance_be(&CollatorSelection::account_id(), 4);
+		// check to see it collected under ED
+		assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 4);
+
+		// 4 is the default author.
+		assert_eq!(Balances::free_balance(4), 100);
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
+		// triggers `note_author`
+		Authorship::on_initialize(1);
+
+
+		let collator = CandidateInfo {
+			who: 4,
+			deposit: 10,
+			last_block: 0
+		};
+
+		assert_eq!(CollatorSelection::candidates(), vec![collator]);
+
+		// half of free balance of the pot goes to the collator who's the author (4 in tests).
+		assert_eq!(Balances::free_balance(4), 92);
+		// half of free balance sstays.
+		assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 2);
+		assert_eq!(Balances::reserved_balance(CollatorSelection::account_id()), <Balances as Currency<_>>::minimum_balance());
+	});
+}
+
+#[test]
 fn session_management_works() {
 	new_test_ext().execute_with(|| {
 		initialize_to_block(1);

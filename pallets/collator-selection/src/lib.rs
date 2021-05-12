@@ -216,6 +216,8 @@ pub mod pallet {
 			<DesiredCandidates<T>>::put(&self.desired_candidates);
 			<CandidacyBond<T>>::put(&self.candidacy_bond);
 			<Invulnerables<T>>::put(&self.invulnerables);
+			T::Currency::make_free_balance_be(&T::PotId::get().into_account(), T::Currency::minimum_balance());
+			let _s = T::Currency::reserve(&T::PotId::get().into_account(), T::Currency::minimum_balance());
 		}
 	}
 
