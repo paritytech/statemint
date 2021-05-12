@@ -93,13 +93,12 @@ async function main() {
 			const { name, wsPort, port, flags } = node;
 			console.log(`Starting ${name}...`);
 			let addresses = await listenAddresses(relayChainApi)
-			//await addBootNodes(`${chain}-raw.json`, addresses);
+			// await addBootNodes(`${chain}-raw.json`, addresses);
 
 			// We spawn a `child_process` starting a node, and then wait until we
 			// able to connect to it using PolkadotJS in order to know its running.
 			startNode(relay_chain_bin, name, wsPort, port, spec, flags);
 		}
-	
 	}
 
 
@@ -228,4 +227,4 @@ process.on("SIGINT", function () {
 	process.exit(2);
 });
 
-main();
+main().catch(console.error).finally(console.log);
