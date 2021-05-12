@@ -110,6 +110,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_transaction_payment::Config + pallet_balances::Config + pallet_authorship::Config + pallet_assets::Config {
+		type Convert: Convert<BalanceOf<Self>, AssetBalanceOf<Self>>;
 		type Fungibles: Balanced<Self::AccountId>;
 	}
 
@@ -129,7 +130,7 @@ impl<T: Config> Pallet<T> where
 	AssetBalanceOf<T>: FixedPointOperand,
 {
 	fn to_asset_balance(balance: BalanceOf<T>, asset_id: AssetIdOf<T>) -> Result<AssetBalanceOf<T>, ()> {
-		let res = pallet_assets::BalanceToAssetBalance::<T, BalanceOf<T>, <T as pallet_balances::Config>::ExistentialDeposit>::to_asset_balance(balance, asset_id)
+		let res = pallet_assets::BalanceToAssetBalance::<T, T, T::Convert>::to_asset_balance(balance, asset_id)
 			.map_err(|_| ());
 		res
 	}
@@ -173,7 +174,6 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 
 		let maybe_asset_id  = self.1;
 		if let Some(asset_id) = maybe_asset_id {
-			// TODO: implement fee payment via assets pallet
 			let converted_fee = Pallet::<T>::to_asset_balance(fee, asset_id)
 				.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
 			let can_withdraw = <T::Fungibles as Inspect<T::AccountId>>::can_withdraw(asset_id, who, converted_fee);
@@ -309,9 +309,7 @@ impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 			InitialPayment::Native(imbalance) => {
 				<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::correct_and_deposit_fee(&who, info, post_info, actual_fee, tip, imbalance)?;
 			},
-			// InitialPayment::Asset((asset_id, amount)) => {
 			InitialPayment::Asset(credit) => {
-				// let credit = <T::Fungibles as Balanced<T::AccountId>>::issue(asset_id, amount);
 				Self::correct_and_deposit_fee(&who, info, post_info, actual_fee, tip, credit)?;
 			},
 			// TODO: just assert that actual_fee is also zero?
