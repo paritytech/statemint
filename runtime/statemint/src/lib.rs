@@ -329,7 +329,7 @@ parameter_types! {
 }
 
 // We allow root and the relay council to execute privileged asset operations.
-pub type ForceOrigin =  EnsureOneOf<
+pub type AssetsForceOrigin =  EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
 	EnsureXcm<IsMajorityOfBody<RelayLocation, UnitBody>>,
@@ -340,7 +340,7 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	type AssetId = u32;
 	type Currency = Balances;
-	type ForceOrigin = ForceOrigin;
+	type ForceOrigin = AssetsForceOrigin;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
