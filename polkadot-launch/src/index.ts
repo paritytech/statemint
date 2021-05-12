@@ -73,7 +73,6 @@ async function main() {
 		process.exit();
 	}
 	const chain = config.relaychain.chain;
-	console.log('Generating chain spec')
 	await generateChainSpec(relay_chain_bin, chain);
 	clearAuthorities(`${chain}.json`);
 	for (const node of config.relaychain.nodes) {
