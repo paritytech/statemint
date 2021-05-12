@@ -671,7 +671,7 @@ parameter_types! {
 	pub const MaxInvulnerables: u32 = 100;
 }
 
-pub type UpdateOrigin = EnsureOneOf<
+pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
 	EnsureXcm<IsMajorityOfBody<RelayLocation, UnitBody>>,
@@ -680,7 +680,7 @@ pub type UpdateOrigin = EnsureOneOf<
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
-	type UpdateOrigin = UpdateOrigin;
+	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
