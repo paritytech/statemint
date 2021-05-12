@@ -137,7 +137,7 @@ impl<T: Config> Pallet<T> where
 }
 
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
-/// in the queue. Allows paying via both `pallet_balances` as well as `pallet_assets`.
+/// in the queue. Allows paying via both `Currency` as well as `fungibles::Balanced`.
 #[derive(Encode, Decode, Clone, Eq, PartialEq)]
 pub struct ChargeAssetTxPayment<T: Config>(#[codec(compact)] BalanceOf<T>, Option<AssetIdOf<T>>);
 
