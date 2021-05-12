@@ -327,7 +327,7 @@ parameter_types! {
 	pub const UnitBody: BodyId = BodyId::Unit;
 }
 
-// We allow root and the relay council to execute privileged asset operations.
+/// We allow root and the Relay Chain council to execute privileged asset operations.
 pub type AssetsForceOrigin =  EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
