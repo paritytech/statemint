@@ -666,6 +666,7 @@ parameter_types! {
 	pub const MaxInvulnerables: u32 = 100;
 }
 
+/// We allow root and the Relay Chain council to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
