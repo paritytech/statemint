@@ -6,7 +6,7 @@ Simple CLI tool to launch a local [Polkadot](https://github.com/paritytech/polka
 
 - You must use node.js v14.x.x
 - MacOs users: make sure your machines firewall is disabled. Choose Apple menu  > System Preferences, click Security & Privacy, then click Firewall and make sure it is off.
-- These is adapted instructions for quickly starting statemint. For the original README consult https://github.com/paritytech/polkadot-launch#readme
+- These instructions are adapted from the original polkadot-launch for quickly starting statemint. For the original README consult https://github.com/paritytech/polkadot-launch#readme
 
 ## Building binaries
 
