@@ -198,8 +198,8 @@ fn leave_intent() {
 #[test]
 fn authorship_event_handler() {
 	new_test_ext().execute_with(|| {
-		// put some money into the pot
-		Balances::make_free_balance_be(&CollatorSelection::account_id(), 100);
+		// put 100 in the pot + 5 for ED
+		Balances::make_free_balance_be(&CollatorSelection::account_id(), 105);
 
 		// 4 is the default author.
 		assert_eq!(Balances::free_balance(4), 100);
@@ -218,21 +218,18 @@ fn authorship_event_handler() {
 
 		// half of the pot goes to the collator who's the author (4 in tests).
 		assert_eq!(Balances::free_balance(4), 140);
-		// half stays.
-		assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 50);
+		// half + ED stays.
+		assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 55);
 	});
 }
 
 #[test]
-fn fees_under_ed_work() {
+fn fees_edgecases() {
 	new_test_ext().execute_with(|| {
-		// check reserve balance on chain init
-		assert_eq!(Balances::reserved_balance(CollatorSelection::account_id()), <Balances as Currency<_>>::minimum_balance());
-		// put some money into the pot under ED
-		Balances::make_free_balance_be(&CollatorSelection::account_id(), 4);
-		// check to see it collected under ED
-		assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 4);
-
+		// Nothing panics, no reward when no ED in balance
+		Authorship::on_initialize(1);
+		// put some money into the pot at ED
+		Balances::make_free_balance_be(&CollatorSelection::account_id(), 5);
 		// 4 is the default author.
 		assert_eq!(Balances::free_balance(4), 100);
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
@@ -248,11 +245,11 @@ fn fees_under_ed_work() {
 
 		assert_eq!(CollatorSelection::candidates(), vec![collator]);
 
-		// half of free balance of the pot goes to the collator who's the author (4 in tests).
-		assert_eq!(Balances::free_balance(4), 92);
-		// half of free balance sstays.
-		assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 2);
-		assert_eq!(Balances::reserved_balance(CollatorSelection::account_id()), <Balances as Currency<_>>::minimum_balance());
+		// Nothing received
+		assert_eq!(Balances::free_balance(4), 90);
+		// all fee stays
+		assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 5);
+		// assert_eq!(Balances::reserved_balance(CollatorSelection::account_id()), <Balances as Currency<_>>::minimum_balance());
 	});
 }
 

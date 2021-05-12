@@ -83,7 +83,7 @@ pub mod pallet {
 	use frame_support::{
 		sp_runtime::{
 			RuntimeDebug,
-			traits::AccountIdConversion,
+			traits::{AccountIdConversion, CheckedSub, Zero},
 		},
 		weights::DispatchClass,
 	};
@@ -216,8 +216,6 @@ pub mod pallet {
 			<DesiredCandidates<T>>::put(&self.desired_candidates);
 			<CandidacyBond<T>>::put(&self.candidacy_bond);
 			<Invulnerables<T>>::put(&self.invulnerables);
-			T::Currency::make_free_balance_be(&T::PotId::get().into_account(), T::Currency::minimum_balance());
-			let _s = T::Currency::reserve(&T::PotId::get().into_account(), T::Currency::minimum_balance());
 		}
 	}
 
@@ -379,11 +377,11 @@ pub mod pallet {
 		pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>
 	{
 		fn note_author(author: T::AccountId) {
-			let treasury = Self::account_id();
-			let reward = T::Currency::free_balance(&treasury).div(2u32.into());
-
-			// `reward` is half of treasury account, this should never fail.
-			let _success = T::Currency::transfer(&treasury, &author, reward, KeepAlive);
+			let pot = Self::account_id();
+			// assumes an ED will be sent to pot.
+			let reward = T::Currency::free_balance(&pot).checked_sub(&T::Currency::minimum_balance()).unwrap_or_else(Zero::zero).div(2u32.into());
+			// `reward` is half of pot account, this should never fail.
+			let _success = T::Currency::transfer(&pot, &author, reward, KeepAlive);
 			debug_assert!(_success.is_ok());
 			let candidates_len = <Candidates<T>>::mutate(|candidates| -> usize {
 				if let Some(found) = candidates.iter_mut().find(|candidate| candidate.who == author) {
