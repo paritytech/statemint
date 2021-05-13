@@ -249,7 +249,6 @@ fn fees_edgecases() {
 		assert_eq!(Balances::free_balance(4), 90);
 		// all fee stays
 		assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 5);
-		// assert_eq!(Balances::reserved_balance(CollatorSelection::account_id()), <Balances as Currency<_>>::minimum_balance());
 	});
 }
 
