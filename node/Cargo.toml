@@ -42,6 +42,10 @@ version = '2.0.0'
 path = '../runtime/statemine'
 version = '2.0.0'
 
+[dependencies.westmint-runtime]
+path = '../runtime/westmint'
+version = '2.0.0'
+
 [dependencies.pallet-transaction-payment-rpc]
 git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
