@@ -163,6 +163,7 @@ mod tests {
 		type PotId = PotId;
 		type MaxCandidates = MaxCandidates;
 		type MaxInvulnerables = MaxInvulnerables;
+		type KickThreshold = ();
 		type WeightInfo = ();
 	}
 

@@ -55,6 +55,17 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
 version = '3.0.0'
 
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = "statemint"
+version = '3.0.0'
 
 [dependencies.node-primitives]
 default-features = false
@@ -79,19 +90,7 @@ path = '../../pallets/collator-selection'
 [dev-dependencies]
 serde = { version = "1.0.119" }
 
-[dev-dependencies.sp-core]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-branch = "statemint"
-version = '3.0.0'
-
 [dev-dependencies.sp-io]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-branch = "statemint"
-version = '3.0.0'
-
-[dev-dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
