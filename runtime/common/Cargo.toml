@@ -12,6 +12,12 @@ edition = "2018"
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
+[dependencies.sp-consensus-aura]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = "statemint"
+version = '0.9.0'
+
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -109,6 +115,7 @@ version = '3.0.0'
 default = ["std"]
 std = [
 	'codec/std',
+	'sp-consensus-aura/std',
 	'sp-std/std',
 	'sp-io/std',
 	'frame-support/std',

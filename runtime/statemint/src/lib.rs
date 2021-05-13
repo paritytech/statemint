@@ -44,6 +44,24 @@ use sp_version::RuntimeVersion;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 };
+pub use runtime_common::{
+	BlockNumber, Signature, AccountId, Balance, Index, Hash, AuraId, NORMAL_DISPATCH_RATIO,
+	AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, SLOT_DURATION, HOURS,
+};
+pub use runtime_common as common;
+use runtime_common::impls::DealWithFees;
+use codec::{Decode, Encode};
+use constants::{currency::*, fee::WeightToFee};
+use frame_support::{
+	construct_runtime, parameter_types,
+	traits::{InstanceFilter, IsInVec, All},
+	weights::{
+		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
+		DispatchClass, Weight,
+	},
+	RuntimeDebug, PalletId,
+};
+use sp_runtime::Perbill;
 
 // Polkadot imports
 use polkadot_parachain::primitives::Sibling;
@@ -78,7 +96,6 @@ pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill, Perquintill};
-pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,
@@ -143,7 +160,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	transaction_version: 1,
 };
 
-/// This determines the average expected block time that we are targeting.
+/// This determines the average expected block time that we are targetting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
 /// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
 /// up by `pallet_aura` to implement `fn slot_duration()`.

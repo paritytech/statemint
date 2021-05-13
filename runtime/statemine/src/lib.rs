@@ -28,7 +28,7 @@ pub mod constants;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::traits::{
-	AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify, AccountIdConversion,
+	AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify, AccountIdConversion
 };
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -44,6 +44,27 @@ use sp_version::RuntimeVersion;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 };
+pub use runtime_common::{
+	BlockNumber, Signature, AccountId, Balance, Index, Hash, AuraId, NORMAL_DISPATCH_RATIO,
+	AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, SLOT_DURATION, HOURS,
+};
+pub use runtime_common as common;
+use runtime_common::impls::DealWithFees;
+use codec::{Decode, Encode};
+use constants::{currency::*, fee::WeightToFee};
+use frame_support::{
+	construct_runtime, parameter_types,
+	traits::{InstanceFilter, IsInVec, All},
+	weights::{
+		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
+		DispatchClass, Weight,
+	},
+	RuntimeDebug, PalletId,
+};
+use sp_runtime::Perbill;
+
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
 use polkadot_parachain::primitives::Sibling;
@@ -78,7 +99,6 @@ pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill, Perquintill};
-pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,
@@ -274,12 +294,11 @@ parameter_types! {
 }
 
 impl pallet_authorship::Config for Runtime {
-	// TODO https://github.com/paritytech/statemint/issues/23
-	// Add FindAccountFromAuthorIndex when Aura is integrated
+	// type FindAuthor = pallet_collator_selection::FindAuthorFromIndex<Self, Aura>;
 	type FindAuthor = ();
 	type UncleGenerations = UncleGenerations;
 	type FilterUncle = ();
-	type EventHandler = ();
+	type EventHandler = (CollatorSelection,);
 }
 
 parameter_types! {

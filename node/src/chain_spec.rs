@@ -19,7 +19,7 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use statemint_runtime::{AccountId, Signature, AuraId, Balance};
+use statemint_runtime::common::{AccountId, Signature, AuraId, Balance};
 use hex_literal::hex;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
