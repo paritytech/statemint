@@ -100,12 +100,6 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
 version = '3.0.0'
 
-[dependencies.pallet-sudo]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-branch = "statemint"
-version = '3.0.0'
-
 [dependencies.pallet-timestamp]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -355,7 +349,6 @@ std = [
 	'pallet-randomness-collective-flip/std',
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-timestamp/std',
-	'pallet-sudo/std',
 	'pallet-session/std',
 	'pallet-xcm/std',
 	'pallet-transaction-payment/std',

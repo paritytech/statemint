@@ -248,11 +248,6 @@ impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 }
 
-impl pallet_sudo::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
-}
-
 parameter_types! {
 	pub const AssetDeposit: Balance = 100 * DOT; // 100 DOT deposit to create asset
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
@@ -626,7 +621,6 @@ construct_runtime!(
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 
 		// Monetary stuff;
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},

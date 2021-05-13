@@ -106,7 +106,6 @@ pub fn statemint_development_config(id: ParaId) -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				id,
 			)
 		},
@@ -142,7 +141,6 @@ pub fn statemint_local_config(id: ParaId) -> ChainSpec {
 					hex!("dee1e2a19c2f7ddee43e66373d58768c6dc9ba4424af6101a5497b2e4a945371").into(),
 					hex!("6a9099150aa91fd6cb5ec1a497e0d6b0e14cca7a863ed5608f6aa6a4970c6169").into(),
 				],
-				hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
 				id,
 			)
 		},
@@ -160,7 +158,6 @@ pub fn statemint_local_config(id: ParaId) -> ChainSpec {
 fn statemint_testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
-	root_key: AccountId,
 	id: ParaId,
 ) -> statemint_runtime::GenesisConfig {
 	statemint_runtime::GenesisConfig {
@@ -177,7 +174,6 @@ fn statemint_testnet_genesis(
 				.map(|k| (k, STATEMINT_ED * 4096))
 				.collect(),
 		},
-		pallet_sudo: statemint_runtime::SudoConfig { key: root_key },
 		parachain_info: statemint_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_collator_selection: statemint_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -219,7 +215,6 @@ pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				id,
 			)
 		},
@@ -255,7 +250,6 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 					hex!("dee1e2a19c2f7ddee43e66373d58768c6dc9ba4424af6101a5497b2e4a945371").into(),
 					hex!("6a9099150aa91fd6cb5ec1a497e0d6b0e14cca7a863ed5608f6aa6a4970c6169").into(),
 				],
-				hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
 				id,
 			)
 		},
@@ -273,7 +267,6 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 fn statemine_testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
-	root_key: AccountId,
 	id: ParaId,
 ) -> statemine_runtime::GenesisConfig {
 	statemine_runtime::GenesisConfig {
@@ -290,7 +283,6 @@ fn statemine_testnet_genesis(
 				.map(|k| (k, STATEMINE_ED * 4096))
 				.collect(),
 		},
-		pallet_sudo: statemine_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_collator_selection: statemine_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
