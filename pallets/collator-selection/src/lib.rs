@@ -50,6 +50,8 @@
 //! - Half the value of the transaction fees within the block. The other half of the transaction
 //!   fees are deposited into the Pot.
 //!
+//! To initiate rewards an ED needs to be transferred to the pot address.
+//!
 //! Note: Eventually the Pot distribution may be modified as discussed in
 //! [this issue](https://github.com/paritytech/statemint/issues/21#issuecomment-810481073).
 
@@ -83,7 +85,7 @@ pub mod pallet {
 	use frame_support::{
 		sp_runtime::{
 			RuntimeDebug,
-			traits::AccountIdConversion,
+			traits::{AccountIdConversion, CheckedSub, Zero},
 		},
 		weights::DispatchClass,
 	};
@@ -377,11 +379,11 @@ pub mod pallet {
 		pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>
 	{
 		fn note_author(author: T::AccountId) {
-			let treasury = Self::account_id();
-			let reward = T::Currency::free_balance(&treasury).div(2u32.into());
-
-			// `reward` is half of treasury account, this should never fail.
-			let _success = T::Currency::transfer(&treasury, &author, reward, KeepAlive);
+			let pot = Self::account_id();
+			// assumes an ED will be sent to pot.
+			let reward = T::Currency::free_balance(&pot).checked_sub(&T::Currency::minimum_balance()).unwrap_or_else(Zero::zero).div(2u32.into());
+			// `reward` is half of pot account minus ED, this should never fail.
+			let _success = T::Currency::transfer(&pot, &author, reward, KeepAlive);
 			debug_assert!(_success.is_ok());
 			let candidates_len = <Candidates<T>>::mutate(|candidates| -> usize {
 				if let Some(found) = candidates.iter_mut().find(|candidate| candidate.who == author) {
