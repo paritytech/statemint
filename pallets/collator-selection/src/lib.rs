@@ -382,7 +382,7 @@ pub mod pallet {
 			let pot = Self::account_id();
 			// assumes an ED will be sent to pot.
 			let reward = T::Currency::free_balance(&pot).checked_sub(&T::Currency::minimum_balance()).unwrap_or_else(Zero::zero).div(2u32.into());
-			// `reward` is half of pot account, this should never fail.
+			// `reward` is half of pot account minus ED, this should never fail.
 			let _success = T::Currency::transfer(&pot, &author, reward, KeepAlive);
 			debug_assert!(_success.is_ok());
 			let candidates_len = <Candidates<T>>::mutate(|candidates| -> usize {
