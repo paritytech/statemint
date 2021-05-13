@@ -19,7 +19,7 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use statemint_runtime::{AccountId, Signature, Balance};
+use statemint_runtime::common::{AccountId, Signature, Balance};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use hex_literal::hex;
 
@@ -27,8 +27,8 @@ use hex_literal::hex;
 pub type ChainSpec = sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
 pub type StatemineChainSpec = sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
 
-const STATEMINT_ED: Balance = statemint_runtime::EXISTENTIAL_DEPOSIT;
-const STATEMINE_ED: Balance = statemine_runtime::EXISTENTIAL_DEPOSIT;
+const STATEMINT_ED: Balance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const STATEMINE_ED: Balance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
