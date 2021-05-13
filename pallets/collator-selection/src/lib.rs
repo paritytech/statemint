@@ -50,6 +50,8 @@
 //! - Half the value of the transaction fees within the block. The other half of the transaction
 //!   fees are deposited into the Pot.
 //!
+//! To initiate rewards an ED needs to be transferred to the pot address.
+//!
 //! Note: Eventually the Pot distribution may be modified as discussed in
 //! [this issue](https://github.com/paritytech/statemint/issues/21#issuecomment-810481073).
 
