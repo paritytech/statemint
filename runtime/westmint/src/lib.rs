@@ -92,7 +92,7 @@ pub mod opaque {
 	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
-	
+
 	impl_opaque_keys! {
 		pub struct SessionKeys {
 			pub aura: Aura,
