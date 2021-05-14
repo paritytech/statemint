@@ -115,7 +115,7 @@ Statemint is licensed under [Apache 2](LICENSE).
 
 ### Temp
 
-* Pointed the repo towards `rococo-v1` branch.
+* Pointed the repo towards `statemint` branch.
 
 __Commits:__
 ```
@@ -125,12 +125,9 @@ __Commits:__
 "git+https://github.com/paritytech/grandpa-bridge-gadget?branch=statemint#a063d033ded6205389112d03c8eb2000c6fab373"
 ```
 
-* **Polkadot launch** can be run by dropping the proper polkadot binary in bin 
-  * Run Globally
-    * polkadot-launch config.json
-  * Run locally, navigate into polkadot-launch,
-    * ``` yarn ```
-    * ``` yarn start ```
+### Launching a local test network
+
+Consult the instructions in [_polkadot-launch/README.md_](polkadot-launch/README.md)
 
 ### Benchmarks 
 
