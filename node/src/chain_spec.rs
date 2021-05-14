@@ -420,5 +420,6 @@ fn westmint_testnet_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		pallet_aura: Default::default(),
+		cumulus_pallet_aura_ext: Default::default(),
 	}
 }
