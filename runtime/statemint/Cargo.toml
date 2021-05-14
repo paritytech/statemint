@@ -100,12 +100,6 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
 version = '3.0.0'
 
-[dependencies.pallet-sudo]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-branch = "statemint"
-version = '3.0.0'
-
 [dependencies.pallet-timestamp]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -207,6 +201,11 @@ branch = "statemint"
 version = '3.0.0'
 
 # Cumulus dependencies
+[dependencies.cumulus-pallet-aura-ext]
+default-features = false
+git = 'https://github.com/paritytech/cumulus.git'
+branch = "statemint"
+
 [dependencies.parachain-info]
 default-features = false
 git = 'https://github.com/paritytech/cumulus.git'
@@ -355,13 +354,13 @@ std = [
 	'pallet-randomness-collective-flip/std',
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-timestamp/std',
-	'pallet-sudo/std',
 	'pallet-session/std',
 	'pallet-xcm/std',
 	'pallet-transaction-payment/std',
 	'pallet-collator-selection/std',
 	'node-primitives/std',
 	'parachain-info/std',
+	"cumulus-pallet-aura-ext/std",
 	'cumulus-pallet-parachain-system/std',
 	'cumulus-pallet-dmp-queue/std',
 	"cumulus-pallet-xcmp-queue/std",
