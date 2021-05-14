@@ -253,11 +253,20 @@ pub fn run() -> Result<()> {
 			}
 
 			Ok(())
-		}
+		},
+		Some(Subcommand::Benchmark(cmd)) => {
+			if cfg!(feature = "runtime-benchmarks") {
+				let runner = cli.create_runner(cmd)?;
+
+				runner.sync_run(|config| cmd.run::<Block, RuntimeExecutor>(config))
+			} else {
+				Err("Benchmarking wasn't enabled when building the node. \
+				You can enable it with `--features runtime-benchmarks`.".into())
+			}
+		},
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 			runner.run_node_until_exit(|config| async move {
-				// TODO
 				let key = sp_core::Pair::generate().0;
 
 				let para_id =

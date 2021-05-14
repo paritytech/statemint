@@ -42,7 +42,7 @@ use sp_version::RuntimeVersion;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 };
-pub use runtime_common::{
+use runtime_common::{
 	BlockNumber, Signature, AccountId, Balance, Index, Hash, AuraId, NORMAL_DISPATCH_RATIO,
 	AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, SLOT_DURATION, HOURS,
 };

@@ -8,7 +8,8 @@ use cumulus_client_service::{
 };
 use cumulus_primitives_core::ParaId;
 use polkadot_primitives::v0::CollatorPair;
-use statemint_runtime::{opaque::Block, Hash, RuntimeApi};
+use runtime_common::Hash;
+use statemint_runtime::{opaque::Block, RuntimeApi};
 
 use sc_client_api::ExecutorProvider;
 use sc_executor::native_executor_instance;

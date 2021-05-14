@@ -9633,6 +9633,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-service",
+ "runtime-common",
  "sc-basic-authorship",
  "sc-chain-spec",
  "sc-cli",

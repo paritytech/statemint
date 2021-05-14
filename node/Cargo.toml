@@ -43,6 +43,10 @@ version = '2.0.0'
 path = '../runtime/statemine'
 version = '2.0.0'
 
+[dependencies.runtime-common]
+path = '../runtime/common'
+version = "0.8.30"
+
 [dependencies.pallet-transaction-payment-rpc]
 git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
