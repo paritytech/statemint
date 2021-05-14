@@ -12,11 +12,6 @@
 				"name": "bob",
 				"wsPort": 9955,
 				"port": 30555
-			},
-			{
-				"name": "charlie",
-				"wsPort": 9966,
-				"port": 30666
 			}
 		]
 	},
@@ -24,11 +19,11 @@
 		{
 			"bin": "./target/release/statemint",
 			"chain": "statemint-dev",
-			"id": "1",
+			"id": "1001",
 			"wsPort": 9988,
 			"port": 31200,
 			"balance": "1000000000000000000000",
-			"flags": ["--", "--execution=wasm"]
+			"flags": ["--alice", "-laura=debug", "--force-authoring", "--", "--execution=wasm"]
 		}
 	],
 	"simpleParachains": [
