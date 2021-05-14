@@ -19,8 +19,7 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use statemint_runtime::common::{AccountId, Signature, Balance};
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use runtime_common::{AccountId, Signature, AuraId, Balance};
 use hex_literal::hex;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -194,6 +193,7 @@ fn statemint_testnet_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		pallet_aura: Default::default(),
+		cumulus_pallet_aura_ext: Default::default(),
 	}
 }
 
@@ -305,5 +305,6 @@ fn statemine_testnet_genesis(
 			)).collect()
 		},
 		pallet_aura: Default::default(),
+		cumulus_pallet_aura_ext: Default::default(),
 	}
 }
