@@ -510,7 +510,7 @@ pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
 	AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
-	// ^^^ Parent and its unit/exec pluralities get free execution
+	// ^^^ Parent and its exec plurality get free execution
 );
 
 pub struct XcmConfig;
