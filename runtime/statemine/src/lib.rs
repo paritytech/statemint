@@ -86,7 +86,6 @@ use pallet_xcm::{XcmPassthrough, EnsureXcm, IsMajorityOfBody};
 /// to even the core data structures.
 pub mod opaque {
 	use super::*;
-
 	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
 	/// Opaque block type.
