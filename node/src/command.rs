@@ -44,6 +44,7 @@ fn load_spec(
 		"statemint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../specs/statemint.json")[..],
 		)?),
+		"statemine" => Box::new(chain_spec::statemine_mainnet_config(para_id)),
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config(para_id)),
 		"statemine-local" => Box::new(chain_spec::statemine_local_config(para_id)),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(

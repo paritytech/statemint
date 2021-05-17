@@ -16,11 +16,15 @@
 use cumulus_primitives_core::ParaId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use runtime_common::{AccountId, Signature, AuraId, Balance};
 use hex_literal::hex;
+use serde_json;
+
+const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
@@ -199,7 +203,7 @@ pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 		"Statemine Development",
 		// ID
 		"statemine_dev",
-		ChainType::Local,
+		ChainType::Live,
 		move || {
 			statemine_testnet_genesis(
 				// initial collators.
@@ -264,7 +268,88 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 	)
 }
 
+pub fn statemine_mainnet_config(id: ParaId) -> StatemineChainSpec {
+	//TODO check if correct
+	let data = r#"
+		{
+			"ss58Format": 1,
+			"tokenDecimals": 12,
+			"tokenSymbol": "ksm"
+		}"#;
+
+	let properties = serde_json::from_str(data).unwrap();
+	StatemineChainSpec::from_genesis(
+		// Name
+		"statemine",
+		// ID
+		"statemine",
+		ChainType::Live,
+		move || {
+			statemine_mainnet_genesis(
+				vec![
+					//TODO replace with proper keys
+					(
+						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
+						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").unchecked_into()
+					)
+				],
+				// TODO replace with proper keys
+				vec![
+					hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
+				],
+				id,
+			)
+		},
+		//TODO bootnodes
+		vec![],
+		TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
+		Some("statemine"),
+		properties,
+		Extensions {
+			relay_chain: "kusama".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
 fn statemine_testnet_genesis(
+	invulnerables: Vec<(AccountId, AuraId)>,
+	endowed_accounts: Vec<AccountId>,
+	id: ParaId,
+) -> statemine_runtime::GenesisConfig {
+	statemine_runtime::GenesisConfig {
+		frame_system: statemine_runtime::SystemConfig {
+			code: statemine_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		pallet_balances: statemine_runtime::BalancesConfig {
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, STATEMINE_ED * 4096))
+				.collect(),
+		},
+		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_collator_selection: statemine_runtime::CollatorSelectionConfig {
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: STATEMINE_ED * 16,
+			..Default::default()
+		},
+		pallet_session: statemine_runtime::SessionConfig {
+			keys: invulnerables.iter().cloned().map(|(acc, aura)| (
+				acc.clone(), // account id
+				acc.clone(), // validator id
+				statemine_session_keys(aura), // session keys
+			)).collect()
+		},
+		pallet_aura: Default::default(),
+		cumulus_pallet_aura_ext: Default::default(),
+	}
+}
+
+fn statemine_mainnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
