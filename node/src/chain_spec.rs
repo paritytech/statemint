@@ -272,7 +272,7 @@ pub fn statemine_mainnet_config(id: ParaId) -> StatemineChainSpec {
 	//TODO check if correct
 	let data = r#"
 		{
-			"ss58Format": 1,
+			"ss58Format": 2,
 			"tokenDecimals": 12,
 			"tokenSymbol": "ksm"
 		}"#;
