@@ -29,9 +29,11 @@ const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
 pub type StatemineChainSpec = sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
+pub type WestmintChainSpec = sc_service::GenericChainSpec<westmint_runtime::GenesisConfig, Extensions>;
 
 const STATEMINT_ED: Balance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 const STATEMINE_ED: Balance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const WESTMINT_ED: Balance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -59,6 +61,13 @@ pub fn statemint_session_keys(keys: AuraId) -> statemint_runtime::opaque::Sessio
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
 pub fn statemine_session_keys(keys: AuraId) -> statemine_runtime::opaque::SessionKeys {
 	statemine_runtime::opaque::SessionKeys { aura: keys }
+}
+
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::opaque::SessionKeys {
+	westmint_runtime::opaque::SessionKeys { aura: keys }
 }
 
 /// The extensions for the [`ChainSpec`].
@@ -203,7 +212,7 @@ pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 		"Statemine Development",
 		// ID
 		"statemine_dev",
-		ChainType::Live,
+		ChainType::Local,
 		move || {
 			statemine_testnet_genesis(
 				// initial collators.
@@ -268,6 +277,158 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 	)
 }
 
+fn statemine_testnet_genesis(
+	invulnerables: Vec<(AccountId, AuraId)>,
+	endowed_accounts: Vec<AccountId>,
+	id: ParaId,
+) -> statemine_runtime::GenesisConfig {
+	statemine_runtime::GenesisConfig {
+		frame_system: statemine_runtime::SystemConfig {
+			code: statemine_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		pallet_balances: statemine_runtime::BalancesConfig {
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, STATEMINE_ED * 4096))
+				.collect(),
+		},
+		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_collator_selection: statemine_runtime::CollatorSelectionConfig {
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: STATEMINE_ED * 16,
+			..Default::default()
+		},
+		pallet_session: statemine_runtime::SessionConfig {
+			keys: invulnerables.iter().cloned().map(|(acc, aura)| (
+				acc.clone(), // account id
+				acc.clone(), // validator id
+				statemine_session_keys(aura), // session keys
+			)).collect()
+		},
+		pallet_aura: Default::default(),
+		cumulus_pallet_aura_ext: Default::default(),
+	}
+}
+
+pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
+	WestmintChainSpec::from_genesis(
+		// Name
+		"Westmint Development",
+		// ID
+		"westmint_dev",
+		ChainType::Local,
+		move || {
+			westmint_testnet_genesis(
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice"),
+					)
+				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		None,
+		Extensions {
+			relay_chain: "rococo-dev".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
+pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
+	WestmintChainSpec::from_genesis(
+		// Name
+		"Local Testnet",
+		// ID
+		"local_testnet",
+		ChainType::Local,
+		move || {
+			westmint_testnet_genesis(
+				vec![
+					(
+						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
+						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").unchecked_into()
+					)
+				],
+				vec![
+					hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
+					hex!("c8f226d8a15b8d23241596862ce10d2db8359f816d45efb01c65524725543219").into(),
+					hex!("dee1e2a19c2f7ddee43e66373d58768c6dc9ba4424af6101a5497b2e4a945371").into(),
+					hex!("6a9099150aa91fd6cb5ec1a497e0d6b0e14cca7a863ed5608f6aa6a4970c6169").into(),
+				],
+				hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		None,
+		Extensions {
+			relay_chain: "rococo-local".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
+fn westmint_testnet_genesis(
+	invulnerables: Vec<(AccountId, AuraId)>,
+	endowed_accounts: Vec<AccountId>,
+	root_key: AccountId,
+	id: ParaId,
+) -> westmint_runtime::GenesisConfig {
+	westmint_runtime::GenesisConfig {
+		frame_system: westmint_runtime::SystemConfig {
+			code: westmint_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+
+		pallet_balances: westmint_runtime::BalancesConfig {
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, WESTMINT_ED * 4096))
+				.collect(),
+		},
+		pallet_sudo: westmint_runtime::SudoConfig { key: root_key },
+		parachain_info: westmint_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_collator_selection: westmint_runtime::CollatorSelectionConfig {
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: WESTMINT_ED * 16,
+			..Default::default()
+		},
+		pallet_session: westmint_runtime::SessionConfig {
+			keys: invulnerables.iter().cloned().map(|(acc, aura)| (
+				acc.clone(), // account id
+				acc.clone(), // validator id
+				westmint_session_keys(aura), // session keys
+			)).collect()
+		},
+		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
+		// of this.
+		pallet_aura: Default::default(),
+		cumulus_pallet_aura_ext: Default::default(),
+	}
+}
+
 pub fn statemine_mainnet_config(id: ParaId) -> StatemineChainSpec {
 	//TODO check if correct
 	let data = r#"
@@ -310,43 +471,6 @@ pub fn statemine_mainnet_config(id: ParaId) -> StatemineChainSpec {
 			para_id: id.into(),
 		},
 	)
-}
-
-fn statemine_testnet_genesis(
-	invulnerables: Vec<(AccountId, AuraId)>,
-	endowed_accounts: Vec<AccountId>,
-	id: ParaId,
-) -> statemine_runtime::GenesisConfig {
-	statemine_runtime::GenesisConfig {
-		frame_system: statemine_runtime::SystemConfig {
-			code: statemine_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			changes_trie_config: Default::default(),
-		},
-		pallet_balances: statemine_runtime::BalancesConfig {
-			balances: endowed_accounts
-				.iter()
-				.cloned()
-				.map(|k| (k, STATEMINE_ED * 4096))
-				.collect(),
-		},
-		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_collator_selection: statemine_runtime::CollatorSelectionConfig {
-			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: STATEMINE_ED * 16,
-			..Default::default()
-		},
-		pallet_session: statemine_runtime::SessionConfig {
-			keys: invulnerables.iter().cloned().map(|(acc, aura)| (
-				acc.clone(), // account id
-				acc.clone(), // validator id
-				statemine_session_keys(aura), // session keys
-			)).collect()
-		},
-		pallet_aura: Default::default(),
-		cumulus_pallet_aura_ext: Default::default(),
-	}
 }
 
 fn statemine_mainnet_genesis(
