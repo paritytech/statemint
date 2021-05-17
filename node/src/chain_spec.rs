@@ -365,7 +365,7 @@ fn statemine_mainnet_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, STATEMINE_ED * 4096))
+				.map(|k| (k, STATEMINE_ED))
 				.collect(),
 		},
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
