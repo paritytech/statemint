@@ -44,9 +44,6 @@ fn load_spec(
 	Ok(match id {
 		"statemint-dev" => Box::new(chain_spec::statemint_development_config(para_id)),
 		"statemint-local" => Box::new(chain_spec::statemint_local_config(para_id)),
-		"statemint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../specs/statemint.json")[..],
-		)?),
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config(para_id)),
 		"statemine-local" => Box::new(chain_spec::statemine_local_config(para_id)),
 		"westmint-dev" => Box::new(chain_spec::westmint_development_config(para_id)),
@@ -57,6 +54,8 @@ fn load_spec(
 			)?;
 			if use_statemine_runtime(&chain_spec) {
 				Box::new(chain_spec::StatemineChainSpec::from_json_file(path.into())?)
+			} else if use_westmint_runtime(&chain_spec) {
+				Box::new(chain_spec::WestmintChainSpec::from_json_file(path.into())?)
 			} else {
 				Box::new(chain_spec)
 			}
@@ -102,6 +101,8 @@ impl SubstrateCli for Cli {
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		if use_statemine_runtime(&**chain_spec) {
 			&statemine_runtime::VERSION
+		} else if use_westmint_runtime(&**chain_spec) {
+			&westmint_runtime::VERSION
 		} else {
 			&statemint_runtime::VERSION
 		}
@@ -160,7 +161,11 @@ fn use_statemine_runtime(chain_spec: &dyn ChainSpec) -> bool {
 	chain_spec.id().starts_with("statemine")
 }
 
-use crate::service::{new_partial, StatemintRuntimeExecutor, StatemineRuntimeExecutor};
+fn use_westmint_runtime(chain_spec: &dyn ChainSpec) -> bool {
+	chain_spec.id().starts_with("westmint")
+}
+
+use crate::service::{new_partial, StatemintRuntimeExecutor, StatemineRuntimeExecutor, WestmintRuntimeExecutor};
 
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
@@ -170,6 +175,15 @@ macro_rules! construct_async_run {
 				let $components = new_partial::<statemine_runtime::RuntimeApi, StatemineRuntimeExecutor, _>(
 					&$config,
 					crate::service::statemine_build_import_queue,
+				)?;
+				let task_manager = $components.task_manager;
+				{ $( $code )* }.map(|v| (v, task_manager))
+			})
+		} else if use_westmint_runtime(&*runner.config().chain_spec) {
+			runner.async_run(|$config| {
+				let $components = new_partial::<westmint_runtime::RuntimeApi, WestmintRuntimeExecutor, _>(
+					&$config,
+					crate::service::westmint_build_import_queue,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -298,6 +312,7 @@ pub fn run() -> Result<()> {
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 			let use_statemine = use_statemine_runtime(&*runner.config().chain_spec);
+			let use_westmint = use_westmint_runtime(&*runner.config().chain_spec);
 
 			runner.run_node_until_exit(|config| async move {
 				let key = sp_core::Pair::generate().0;
@@ -336,6 +351,11 @@ pub fn run() -> Result<()> {
 
 				if use_statemine {
 					crate::service::start_statemine_node(config, key, polkadot_config, id)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+				} else if use_westmint {
+					crate::service::start_westmint_node(config, key, polkadot_config, id)
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into)

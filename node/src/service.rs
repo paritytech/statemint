@@ -27,16 +27,23 @@ pub use sc_executor::NativeExecutor;
 
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
-// Native executor instance.
+// Native Statemint executor instance.
 native_executor_instance!(
 	pub StatemintRuntimeExecutor,
 	statemint_runtime::api::dispatch,
 	statemint_runtime::native_version,
 );
 
-// Native executor instance.
+// Native Statemine executor instance.
 native_executor_instance!(
 	pub StatemineRuntimeExecutor,
+	statemine_runtime::api::dispatch,
+	statemine_runtime::native_version,
+);
+
+// Native Westmint executor instance.
+native_executor_instance!(
+	pub WestmintRuntimeExecutor,
 	statemine_runtime::api::dispatch,
 	statemine_runtime::native_version,
 );
@@ -521,6 +528,152 @@ pub async fn start_statemine_node(
 		id,
 		|_| Default::default(),
 		statemine_build_import_queue,
+		|client,
+		 prometheus_registry,
+		 telemetry,
+		 task_manager,
+		 relay_chain_node,
+		 transaction_pool,
+		 sync_oracle,
+		 keystore,
+		 force_authoring| {
+			let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+
+			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+				task_manager.spawn_handle(),
+				client.clone(),
+				transaction_pool,
+				prometheus_registry.clone(),
+				telemetry.clone(),
+			);
+
+			let relay_chain_backend = relay_chain_node.backend.clone();
+			let relay_chain_client = relay_chain_node.client.clone();
+			Ok(build_aura_consensus::<
+				sp_consensus_aura::sr25519::AuthorityPair,
+				_,
+				_,
+				_,
+				_,
+				_,
+				_,
+				_,
+				_,
+				_,
+			>(BuildAuraConsensusParams {
+				proposer_factory,
+				create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
+					let parachain_inherent =
+					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
+						relay_parent,
+						&relay_chain_client,
+						&*relay_chain_backend,
+						&validation_data,
+						id,
+					);
+					async move {
+						let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+						let slot =
+						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+							*time,
+							slot_duration.slot_duration(),
+						);
+
+						let parachain_inherent = parachain_inherent.ok_or_else(|| {
+							Box::<dyn std::error::Error + Send + Sync>::from(
+								"Failed to create parachain inherent",
+							)
+						})?;
+						Ok((time, slot, parachain_inherent))
+					}
+				},
+				block_import: client.clone(),
+				relay_chain_client: relay_chain_node.client.clone(),
+				relay_chain_backend: relay_chain_node.backend.clone(),
+				para_client: client.clone(),
+				backoff_authoring_blocks: Option::<()>::None,
+				sync_oracle,
+				keystore,
+				force_authoring,
+				slot_duration,
+				// We got around 500ms for proposing
+				block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+				telemetry,
+			}))
+		},
+	)
+	.await
+}
+
+/// Build the import queue for the Westmint runtime.
+pub fn westmint_build_import_queue(
+	client: Arc<TFullClient<Block, westmint_runtime::RuntimeApi, WestmintRuntimeExecutor>>,
+	config: &Configuration,
+	telemetry: Option<TelemetryHandle>,
+	task_manager: &TaskManager,
+) -> Result<
+	sp_consensus::DefaultImportQueue<
+		Block,
+		TFullClient<Block, westmint_runtime::RuntimeApi, WestmintRuntimeExecutor>,
+	>,
+	sc_service::Error,
+> {
+	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+
+	let block_import = cumulus_client_consensus_aura::AuraBlockImport::<
+		_,
+		_,
+		_,
+		sp_consensus_aura::sr25519::AuthorityPair,
+	>::new(client.clone(), client.clone());
+
+	cumulus_client_consensus_aura::import_queue::<
+		sp_consensus_aura::sr25519::AuthorityPair,
+		_,
+		_,
+		_,
+		_,
+		_,
+		_,
+	>(cumulus_client_consensus_aura::ImportQueueParams {
+		block_import,
+		client: client.clone(),
+		create_inherent_data_providers: move |_, _| async move {
+			let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+			let slot =
+				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+					*time,
+					slot_duration.slot_duration(),
+				);
+
+			Ok((time, slot))
+		},
+		registry: config.prometheus_registry().clone(),
+		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
+		spawner: &task_manager.spawn_essential_handle(),
+		telemetry,
+	})
+	.map_err(Into::into)
+}
+
+/// Start a Westmint parachain node.
+pub async fn start_westmint_node(
+	parachain_config: Configuration,
+	collator_key: CollatorPair,
+	polkadot_config: Configuration,
+	id: ParaId,
+) -> sc_service::error::Result<
+	(TaskManager, Arc<TFullClient<Block, westmint_runtime::RuntimeApi, WestmintRuntimeExecutor>>)
+> {
+	start_node_impl::<westmint_runtime::RuntimeApi, WestmintRuntimeExecutor, _, _, _>(
+		parachain_config,
+		collator_key,
+		polkadot_config,
+		id,
+		|_| Default::default(),
+		westmint_build_import_queue,
 		|client,
 		 prometheus_registry,
 		 telemetry,
