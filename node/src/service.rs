@@ -44,8 +44,8 @@ native_executor_instance!(
 // Native Westmint executor instance.
 native_executor_instance!(
 	pub WestmintRuntimeExecutor,
-	statemine_runtime::api::dispatch,
-	statemine_runtime::native_version,
+	westmint_runtime::api::dispatch,
+	westmint_runtime::native_version,
 );
 
 /// Starts a `ServiceBuilder` for a full service.
