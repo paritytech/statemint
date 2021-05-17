@@ -15,7 +15,7 @@
 
 use cumulus_primitives_core::ParaId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
-use sc_service::ChainType;
+use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
@@ -93,6 +93,10 @@ where
 }
 
 pub fn statemint_development_config(id: ParaId) -> ChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "DOT".into());
+	properties.insert("tokenDecimals".into(), 10.into());
+
 	ChainSpec::from_genesis(
 		// Name
 		"Statemint Development",
@@ -120,15 +124,19 @@ pub fn statemint_development_config(id: ParaId) -> ChainSpec {
 		vec![],
 		None,
 		None,
-		None,
+		Some(properties),
 		Extensions {
-			relay_chain: "rococo-dev".into(),
+			relay_chain: "polkadot-dev".into(),
 			para_id: id.into(),
 		},
 	)
 }
 
 pub fn statemint_local_config(id: ParaId) -> ChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "DOT".into());
+	properties.insert("tokenDecimals".into(), 10.into());
+
 	ChainSpec::from_genesis(
 		// Name
 		"Local Testnet",
@@ -155,9 +163,9 @@ pub fn statemint_local_config(id: ParaId) -> ChainSpec {
 		vec![],
 		None,
 		None,
-		None,
+		Some(properties),
 		Extensions {
-			relay_chain: "rococo-local".into(),
+			relay_chain: "polkadot-local".into(),
 			para_id: id.into(),
 		},
 	)
@@ -203,6 +211,10 @@ fn statemint_testnet_genesis(
 }
 
 pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "KSM".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
 	StatemineChainSpec::from_genesis(
 		// Name
 		"Statemine Development",
@@ -230,15 +242,19 @@ pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 		vec![],
 		None,
 		None,
-		None,
+		Some(properties),
 		Extensions {
-			relay_chain: "rococo-dev".into(),
+			relay_chain: "kusama-dev".into(),
 			para_id: id.into(),
 		},
 	)
 }
 
 pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "KSM".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
 	StatemineChainSpec::from_genesis(
 		// Name
 		"Local Testnet",
@@ -265,9 +281,9 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 		vec![],
 		None,
 		None,
-		None,
+		Some(properties),
 		Extensions {
-			relay_chain: "rococo-local".into(),
+			relay_chain: "kusama-local".into(),
 			para_id: id.into(),
 		},
 	)
@@ -311,6 +327,10 @@ fn statemine_testnet_genesis(
 }
 
 pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "WND".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
 	WestmintChainSpec::from_genesis(
 		// Name
 		"Westmint Development",
@@ -339,15 +359,19 @@ pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
 		vec![],
 		None,
 		None,
-		None,
+		Some(properties),
 		Extensions {
-			relay_chain: "rococo-dev".into(),
+			relay_chain: "westend-dev".into(),
 			para_id: id.into(),
 		},
 	)
 }
 
 pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "WND".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
 	WestmintChainSpec::from_genesis(
 		// Name
 		"Local Testnet",
@@ -375,9 +399,9 @@ pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
 		vec![],
 		None,
 		None,
-		None,
+		Some(properties),
 		Extensions {
-			relay_chain: "rococo-local".into(),
+			relay_chain: "westend-local".into(),
 			para_id: id.into(),
 		},
 	)
