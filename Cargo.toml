@@ -7,4 +7,5 @@ members = [
 	'pallets/collator-selection',
 	'runtime/statemint',
 	'runtime/statemine',
+	'runtime/westmint',
 ]

@@ -49,6 +49,8 @@ fn load_spec(
 		)?),
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config(para_id)),
 		"statemine-local" => Box::new(chain_spec::statemine_local_config(para_id)),
+		"westmint-dev" => Box::new(chain_spec::westmint_development_config(para_id)),
+		"westmint-local" => Box::new(chain_spec::westmint_local_config(para_id)),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(
 				path.into(),
