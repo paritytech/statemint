@@ -40,7 +40,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_system::{
-	EnsureOneOf, EnsureRoot,limits::{BlockLength, BlockWeights},
+	EnsureOneOf, EnsureRoot, limits::{BlockLength, BlockWeights},
 };
 use runtime_common::{
 	BlockNumber, Signature, AccountId, Balance, Index, Hash, AuraId, NORMAL_DISPATCH_RATIO,
