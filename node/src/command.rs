@@ -302,8 +302,13 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Benchmark(cmd)) => {
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
-
-				runner.sync_run(|config| cmd.run::<Block, StatemintRuntimeExecutor>(config))
+				if use_statemine_runtime(&*runner.config().chain_spec) {
+					runner.sync_run(|config| cmd.run::<Block, StatemineRuntimeExecutor>(config))
+				} else if use_westmint_runtime(&*runner.config().chain_spec) {
+					runner.sync_run(|config| cmd.run::<Block, WestmintRuntimeExecutor>(config))
+				} else {
+					runner.sync_run(|config| cmd.run::<Block, StatemintRuntimeExecutor>(config))
+				}
 			} else {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`.".into())
