@@ -258,14 +258,14 @@ parameter_types! {
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
 	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
-	pub const UnitBody: BodyId = BodyId::Executive;
+	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
 /// We allow root and the Relay Chain council to execute privileged asset operations.
 pub type AssetsForceOrigin =  EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<KsmLocation, UnitBody>>,
+	EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>,
 >;
 
 impl pallet_assets::Config for Runtime {
@@ -500,7 +500,7 @@ parameter_types! {
 }
 
 match_type! {
-	pub type ParentOrParentsUnitPlurality: impl Contains<MultiLocation> = {
+	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
 		MultiLocation::X1(Junction::Parent) |
 		MultiLocation::X2(Junction::Parent, Junction::Plurality { id: BodyId::Executive, .. })
 	};
@@ -509,7 +509,7 @@ match_type! {
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
-	AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
+	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 	// ^^^ Parent and its exec plurality get free execution
 );
 
@@ -612,7 +612,7 @@ parameter_types! {
 pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<KsmLocation, UnitBody>>,
+	EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>,
 >;
 
 impl pallet_collator_selection::Config for Runtime {
