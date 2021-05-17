@@ -21,7 +21,7 @@ pub use constants::*;
 
 /// Common types of statemint and statemine.
 mod types {
-	use sp_runtime::traits::{Verify, IdentifyAccount};
+	use sp_runtime::traits::{Verify, IdentifyAccount, BlakeTwo256};
 
 	/// An index to a block.
 	pub type BlockNumber = u32;
@@ -45,6 +45,9 @@ mod types {
 
 	/// A hash of some data used by the chain.
 	pub type Hash = sp_core::H256;
+
+	/// Block header type as expected by this runtime.
+	pub type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 
 	/// Digest item type.
 	pub type DigestItem = sp_runtime::generic::DigestItem<Hash>;
