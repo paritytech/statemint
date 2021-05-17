@@ -140,15 +140,15 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
-use crate::service::{new_partial, RuntimeExecutor};
+use crate::service::{new_partial, StatemintRuntimeExecutor};
 
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
 		runner.async_run(|$config| {
-			let $components = new_partial::<statemint_runtime::RuntimeApi, RuntimeExecutor, _>(
+			let $components = new_partial::<statemint_runtime::RuntimeApi, StatemintRuntimeExecutor, _>(
 				&$config,
-				crate::service::build_import_queue,
+				crate::service::statemint_build_import_queue,
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -258,7 +258,7 @@ pub fn run() -> Result<()> {
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
 
-				runner.sync_run(|config| cmd.run::<Block, RuntimeExecutor>(config))
+				runner.sync_run(|config| cmd.run::<Block, StatemintRuntimeExecutor>(config))
 			} else {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`.".into())
@@ -301,7 +301,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
-				crate::service::start_node(config, key, polkadot_config, id)
+				crate::service::start_statemint_node(config, key, polkadot_config, id)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)

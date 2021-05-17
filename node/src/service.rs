@@ -8,8 +8,7 @@ use cumulus_client_service::{
 };
 use cumulus_primitives_core::ParaId;
 use polkadot_primitives::v0::CollatorPair;
-use runtime_common::Hash;
-use statemint_runtime::{opaque::Block, RuntimeApi};
+use runtime_common::{Hash, Header};
 
 use sc_client_api::ExecutorProvider;
 use sc_executor::native_executor_instance;
@@ -20,17 +19,26 @@ use sp_api::ConstructRuntimeApi;
 use sp_consensus::SlotData;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::{generic, OpaqueExtrinsic};
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
 pub use sc_executor::NativeExecutor;
 
+pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
 // Native executor instance.
 native_executor_instance!(
-	pub RuntimeExecutor,
+	pub StatemintRuntimeExecutor,
 	statemint_runtime::api::dispatch,
 	statemint_runtime::native_version,
+);
+
+// Native executor instance.
+native_executor_instance!(
+	pub StatemineRuntimeExecutor,
+	statemine_runtime::api::dispatch,
+	statemine_runtime::native_version,
 );
 
 /// Starts a `ServiceBuilder` for a full service.
@@ -300,15 +308,15 @@ where
 }
 
 /// Build the import queue for the "default" runtime.
-pub fn build_import_queue(
-	client: Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
+pub fn statemint_build_import_queue(
+	client: Arc<TFullClient<Block, statemint_runtime::RuntimeApi, StatemintRuntimeExecutor>>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
 	sp_consensus::DefaultImportQueue<
 		Block,
-		TFullClient<Block, RuntimeApi, RuntimeExecutor>,
+		TFullClient<Block, statemint_runtime::RuntimeApi, StatemintRuntimeExecutor>,
 	>,
 	sc_service::Error,
 > {
@@ -352,21 +360,21 @@ pub fn build_import_queue(
 }
 
 /// Start a parachain node.
-pub async fn start_node(
+pub async fn start_statemint_node(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
 	polkadot_config: Configuration,
 	id: ParaId,
 ) -> sc_service::error::Result<
-	(TaskManager, Arc<TFullClient<Block, statemint_runtime::RuntimeApi, RuntimeExecutor>>)
+	(TaskManager, Arc<TFullClient<Block, statemint_runtime::RuntimeApi, StatemintRuntimeExecutor>>)
 > {
-	start_node_impl::<statemint_runtime::RuntimeApi, RuntimeExecutor, _, _, _>(
+	start_node_impl::<statemint_runtime::RuntimeApi, StatemintRuntimeExecutor, _, _, _>(
 		parachain_config,
 		collator_key,
 		polkadot_config,
 		id,
 		|_| Default::default(),
-		build_import_queue,
+		statemint_build_import_queue,
 		|client,
 		 prometheus_registry,
 		 telemetry,
