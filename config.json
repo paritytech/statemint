@@ -19,7 +19,7 @@
 		{
 			"bin": "./target/release/statemint",
 			"chain": "statemint-dev",
-			"id": "1001",
+			"id": "1000",
 			"wsPort": 9988,
 			"port": 31200,
 			"balance": "1000000000000000000000",

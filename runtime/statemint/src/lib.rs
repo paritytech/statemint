@@ -43,8 +43,8 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot, limits::{BlockLength, BlockWeights},
 };
 use runtime_common::{
-	BlockNumber, Signature, AccountId, Balance, Index, Hash, AuraId, NORMAL_DISPATCH_RATIO,
-	AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, SLOT_DURATION, HOURS,
+	BlockNumber, Signature, AccountId, Balance, Index, Hash, AuraId, Header,
+	NORMAL_DISPATCH_RATIO, AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, SLOT_DURATION, HOURS,
 };
 pub use runtime_common as common;
 use runtime_common::impls::DealWithFees;
@@ -156,7 +156,7 @@ impl frame_system::Config for Runtime {
 	type BlockNumber = BlockNumber;
 	type Hash = Hash;
 	type Hashing = BlakeTwo256;
-	type Header = generic::Header<BlockNumber, BlakeTwo256>;
+	type Header = Header;
 	type Event = Event;
 	type Origin = Origin;
 	type BlockHashCount = BlockHashCount;
@@ -644,8 +644,6 @@ construct_runtime!(
 
 /// The address format for describing accounts.
 pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
-/// Block header type as expected by this runtime.
-pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 /// A Block signed with a Justification
@@ -772,6 +770,12 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
+		}
+	}
+
+	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
+		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
+			ParachainSystem::collect_collation_info()
 		}
 	}
 

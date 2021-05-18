@@ -119,9 +119,9 @@ Statemint is licensed under [Apache 2](LICENSE).
 
 __Commits:__
 ```
-"git+https://github.com/paritytech/substrate.git?branch=statemint#34315dddbaf13c6282199c32e3b1a9b1b26cf4b1"
-"git+https://github.com/paritytech/polkadot?branch=statemint#281ba73c0c1b2db1650817a65a0941f84ee2db16"
-"git+https://github.com/paritytech/cumulus.git?branch=statemint#93a91eef1950e2433bf5cb2139f86fd9ebd9a747"
+"git+https://github.com/paritytech/substrate.git?branch=statemint#3f110196163b5ec03bac5ee188d60bedf3ebd91d"
+"git+https://github.com/paritytech/polkadot?branch=statemint#fe0575d96ec442514884ad8e9e230c2aabdfefa2"
+"git+https://github.com/paritytech/cumulus.git?branch=statemint#a786066f23afc071c5990ea3f1c80aa2c4010ac8"
 "git+https://github.com/paritytech/grandpa-bridge-gadget?branch=statemint#c4a8fed8a21ac55aa4a6a0020d14b3dae0ba32bd"
 ```
 
