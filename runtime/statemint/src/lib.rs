@@ -252,7 +252,7 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const AssetDeposit: Balance = 100 * DOT; // 100 DOT deposit to create asset
+	pub const AssetDeposit: Balance = 100 * DOLLARS; // 100 DOT deposit to create asset
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const StringLimit: u32 = 50;
 	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
@@ -326,7 +326,7 @@ parameter_types! {
 pub enum ProxyType {
 	/// Fully permissioned proxy. Can execute any call on behalf of _proxied_.
 	Any,
-	/// Can execute any call that does not transfer funds, including asset transfers.
+	/// Can execute any call that does not transfer funds or assets.
 	NonTransfer,
 	/// Proxy with the ability to reject time-delay proxy announcements.
 	CancelProxy,
