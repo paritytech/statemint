@@ -141,7 +141,7 @@ benchmarks! {
 
 		T::Currency::make_free_balance_be(
 			&<CollatorSelection<T>>::account_id(),
-			T::Currency::minimum_balance() * 2u32.into(),
+			T::Currency::minimum_balance() * 4u32.into(),
 		);
 		let author = account("author", 0, SEED);
 		assert!(T::Currency::free_balance(&author) == 0u32.into());
