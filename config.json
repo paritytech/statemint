@@ -23,7 +23,7 @@
 			"wsPort": 9988,
 			"port": 31200,
 			"balance": "1000000000000000000000",
-			"flags": ["--alice", "-laura=debug", "--", "--execution=wasm"]
+			"flags": ["--alice", "-laura=debug", "--force-authoring", "--", "--execution=wasm"]
 		}
 	],
 	"simpleParachains": [
