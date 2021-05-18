@@ -8,7 +8,7 @@ authors = ['Anonymous']
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Apache-2.0'
-name = 'statemine-runtime'
+name = 'westmint-runtime'
 repository = 'https://github.com/paritytech/substrate/'
 version = '2.0.0'
 
@@ -100,6 +100,12 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
 version = '3.0.0'
 
+[dependencies.pallet-sudo]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = "statemint"
+version = '3.0.0'
+
 [dependencies.pallet-timestamp]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -119,12 +125,6 @@ branch = "statemint"
 version = '3.0.0'
 
 [dependencies.pallet-utility]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-branch = "statemint"
-version = '3.0.0'
-
-[dependencies.pallet-aura]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
@@ -205,12 +205,6 @@ default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
 version = '3.0.0'
-
-[dependencies.sp-consensus-aura]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-branch = "statemint"
-version = '0.9.0'
 
 # Cumulus dependencies
 [dependencies.cumulus-pallet-aura-ext]
@@ -299,22 +293,34 @@ default-features = false
 version = "0.8.30"
 path = '../common'
 
+[dependencies.pallet-aura]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = "statemint"
+version = '3.0.0'
+
 [dependencies.pallet-session]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
 version = '3.0.0'
 
+[dependencies.sp-consensus-aura]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = "statemint"
+version = '0.9.0'
+
 
 [features]
 default = ['std']
 runtime-benchmarks = [
 	'hex-literal',
-	'xcm-builder/runtime-benchmarks',
 	'sp-runtime/runtime-benchmarks',
+	'xcm-builder/runtime-benchmarks',
 	'frame-benchmarking',
-	'frame-support/runtime-benchmarks',
 	'frame-system-benchmarking',
+	'frame-support/runtime-benchmarks',
 	'frame-system/runtime-benchmarks',
 	'pallet-assets/runtime-benchmarks',
 	'pallet-balances/runtime-benchmarks',
@@ -322,12 +328,14 @@ runtime-benchmarks = [
 	'pallet-proxy/runtime-benchmarks',
 	'pallet-utility/runtime-benchmarks',
 	'pallet-timestamp/runtime-benchmarks',
-	'pallet-collator-selection/runtime-benchmarks',
 	'pallet-xcm/runtime-benchmarks',
+	'pallet-collator-selection/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
 	'serde',
+	'sp-consensus-aura/std',
+	'pallet-aura/std',
 	'sp-api/std',
 	'sp-std/std',
 	'sp-io/std',
@@ -339,22 +347,21 @@ std = [
 	'sp-block-builder/std',
 	'sp-transaction-pool/std',
 	'sp-inherents/std',
-	'sp-consensus-aura/std',
 	'frame-support/std',
 	'frame-executive/std',
 	'frame-system/std',
 	'frame-system-rpc-runtime-api/std',
 	'pallet-assets/std',
-	'pallet-aura/std',
 	'pallet-authorship/std',
 	'pallet-balances/std',
 	'pallet-multisig/std',
 	'pallet-proxy/std',
-	'pallet-session/std',
 	'pallet-utility/std',
 	'pallet-randomness-collective-flip/std',
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-timestamp/std',
+	'pallet-sudo/std',
+	'pallet-session/std',
 	'pallet-xcm/std',
 	'pallet-transaction-payment/std',
 	'pallet-collator-selection/std',

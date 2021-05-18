@@ -57,3 +57,6 @@ configLocal.json
 node_modules
 polkadot
 .vscode
+
+# Ignore binaries that may be added for creating a test network
+bin/

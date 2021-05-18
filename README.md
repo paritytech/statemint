@@ -115,22 +115,19 @@ Statemint is licensed under [Apache 2](LICENSE).
 
 ### Temp
 
-* Pointed the repo towards `rococo-v1` branch.
+* Pointed the repo towards `statemint` branch.
 
 __Commits:__
 ```
-"git+https://github.com/paritytech/polkadot?branch=statemint#11d55446f306eb72c8239349e4803109a5d5fba0"
-"git+https://github.com/paritytech/cumulus.git?branch=statemint#e7a5ce791e3f389f8026a9a850e324fb05fce0b8"
-"git+https://github.com/paritytech/substrate.git?branch=statemint#ec180313e410915ed5e319358628260f9d1f3b53"
-"git+https://github.com/paritytech/grandpa-bridge-gadget?branch=statemint#a063d033ded6205389112d03c8eb2000c6fab373"
+"git+https://github.com/paritytech/substrate.git?branch=statemint#3f110196163b5ec03bac5ee188d60bedf3ebd91d"
+"git+https://github.com/paritytech/polkadot?branch=statemint#fe0575d96ec442514884ad8e9e230c2aabdfefa2"
+"git+https://github.com/paritytech/cumulus.git?branch=statemint#a786066f23afc071c5990ea3f1c80aa2c4010ac8"
+"git+https://github.com/paritytech/grandpa-bridge-gadget?branch=statemint#c4a8fed8a21ac55aa4a6a0020d14b3dae0ba32bd"
 ```
 
-* **Polkadot launch** can be run by dropping the proper polkadot binary in bin 
-  * Run Globally
-    * polkadot-launch config.json
-  * Run locally, navigate into polkadot-launch,
-    * ``` yarn ```
-    * ``` yarn start ```
+### Launching a local test network
+
+Consult the instructions in [_polkadot-launch/README.md_](polkadot-launch/README.md)
 
 ### Benchmarks 
 

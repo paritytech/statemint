@@ -15,20 +15,21 @@
 
 use cumulus_primitives_core::ParaId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
-use sc_service::ChainType;
+use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use statemint_runtime::{AccountId, Signature, Balance};
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use runtime_common::{AccountId, Signature, AuraId, Balance};
 use hex_literal::hex;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
 pub type StatemineChainSpec = sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
+pub type WestmintChainSpec = sc_service::GenericChainSpec<westmint_runtime::GenesisConfig, Extensions>;
 
-const STATEMINT_ED: Balance = statemint_runtime::EXISTENTIAL_DEPOSIT;
-const STATEMINE_ED: Balance = statemine_runtime::EXISTENTIAL_DEPOSIT;
+const STATEMINT_ED: Balance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const STATEMINE_ED: Balance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const WESTMINT_ED: Balance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -58,6 +59,13 @@ pub fn statemine_session_keys(keys: AuraId) -> statemine_runtime::opaque::Sessio
 	statemine_runtime::opaque::SessionKeys { aura: keys }
 }
 
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::opaque::SessionKeys {
+	westmint_runtime::opaque::SessionKeys { aura: keys }
+}
+
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
@@ -85,6 +93,10 @@ where
 }
 
 pub fn statemint_development_config(id: ParaId) -> ChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "DOT".into());
+	properties.insert("tokenDecimals".into(), 10.into());
+
 	ChainSpec::from_genesis(
 		// Name
 		"Statemint Development",
@@ -106,52 +118,66 @@ pub fn statemint_development_config(id: ParaId) -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				id,
 			)
 		},
 		vec![],
 		None,
 		None,
-		None,
+		Some(properties),
 		Extensions {
-			relay_chain: "rococo-dev".into(),
+			relay_chain: "polkadot-dev".into(),
 			para_id: id.into(),
 		},
 	)
 }
 
 pub fn statemint_local_config(id: ParaId) -> ChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "DOT".into());
+	properties.insert("tokenDecimals".into(), 10.into());
+
 	ChainSpec::from_genesis(
 		// Name
-		"Local Testnet",
+		"Statemint Local",
 		// ID
-		"local_testnet",
+		"statemint_local",
 		ChainType::Local,
 		move || {
 			statemint_testnet_genesis(
-				vec![
+				// initial collators.
+				vec![(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice")
+					),
 					(
-						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
-						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").unchecked_into()
-					)
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob")
+					),
 				],
 				vec![
-					hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
-					hex!("c8f226d8a15b8d23241596862ce10d2db8359f816d45efb01c65524725543219").into(),
-					hex!("dee1e2a19c2f7ddee43e66373d58768c6dc9ba4424af6101a5497b2e4a945371").into(),
-					hex!("6a9099150aa91fd6cb5ec1a497e0d6b0e14cca7a863ed5608f6aa6a4970c6169").into(),
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
 				id,
 			)
 		},
 		vec![],
 		None,
 		None,
-		None,
+		Some(properties),
 		Extensions {
-			relay_chain: "rococo-local".into(),
+			relay_chain: "polkadot-local".into(),
 			para_id: id.into(),
 		},
 	)
@@ -160,7 +186,6 @@ pub fn statemint_local_config(id: ParaId) -> ChainSpec {
 fn statemint_testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
-	root_key: AccountId,
 	id: ParaId,
 ) -> statemint_runtime::GenesisConfig {
 	statemint_runtime::GenesisConfig {
@@ -177,7 +202,6 @@ fn statemint_testnet_genesis(
 				.map(|k| (k, STATEMINT_ED * 4096))
 				.collect(),
 		},
-		pallet_sudo: statemint_runtime::SudoConfig { key: root_key },
 		parachain_info: statemint_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_collator_selection: statemint_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -194,10 +218,15 @@ fn statemint_testnet_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		pallet_aura: Default::default(),
+		cumulus_pallet_aura_ext: Default::default(),
 	}
 }
 
 pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "KSM".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
 	StatemineChainSpec::from_genesis(
 		// Name
 		"Statemine Development",
@@ -219,52 +248,66 @@ pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				id,
 			)
 		},
 		vec![],
 		None,
 		None,
-		None,
+		Some(properties),
 		Extensions {
-			relay_chain: "rococo-dev".into(),
+			relay_chain: "kusama-dev".into(),
 			para_id: id.into(),
 		},
 	)
 }
 
 pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "KSM".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
 	StatemineChainSpec::from_genesis(
 		// Name
-		"Local Testnet",
+		"Statemine Local",
 		// ID
-		"local_testnet",
+		"statemine_local",
 		ChainType::Local,
 		move || {
 			statemine_testnet_genesis(
-				vec![
+				// initial collators.
+				vec![(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice")
+					),
 					(
-						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
-						hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").unchecked_into()
-					)
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob")
+					),
 				],
 				vec![
-					hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
-					hex!("c8f226d8a15b8d23241596862ce10d2db8359f816d45efb01c65524725543219").into(),
-					hex!("dee1e2a19c2f7ddee43e66373d58768c6dc9ba4424af6101a5497b2e4a945371").into(),
-					hex!("6a9099150aa91fd6cb5ec1a497e0d6b0e14cca7a863ed5608f6aa6a4970c6169").into(),
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				hex!("2241c74de78435b5f21fb95e40b919c30a73cb4a32776dffce87a062a05ff665").into(),
 				id,
 			)
 		},
 		vec![],
 		None,
 		None,
-		None,
+		Some(properties),
 		Extensions {
-			relay_chain: "rococo-local".into(),
+			relay_chain: "kusama-local".into(),
 			para_id: id.into(),
 		},
 	)
@@ -273,7 +316,6 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 fn statemine_testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
-	root_key: AccountId,
 	id: ParaId,
 ) -> statemine_runtime::GenesisConfig {
 	statemine_runtime::GenesisConfig {
@@ -290,7 +332,6 @@ fn statemine_testnet_genesis(
 				.map(|k| (k, STATEMINE_ED * 4096))
 				.collect(),
 		},
-		pallet_sudo: statemine_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_collator_selection: statemine_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -305,5 +346,140 @@ fn statemine_testnet_genesis(
 			)).collect()
 		},
 		pallet_aura: Default::default(),
+		cumulus_pallet_aura_ext: Default::default(),
+	}
+}
+
+pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "WND".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	WestmintChainSpec::from_genesis(
+		// Name
+		"Westmint Development",
+		// ID
+		"westmint_dev",
+		ChainType::Local,
+		move || {
+			westmint_testnet_genesis(
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice"),
+					)
+				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions {
+			relay_chain: "westend-dev".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
+pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "WND".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	WestmintChainSpec::from_genesis(
+		// Name
+		"Westmint Local",
+		// ID
+		"westmint_local",
+		ChainType::Local,
+		move || {
+			westmint_testnet_genesis(
+				// initial collators.
+				vec![(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice")
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob")
+					),
+				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions {
+			relay_chain: "westend-local".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
+fn westmint_testnet_genesis(
+	invulnerables: Vec<(AccountId, AuraId)>,
+	endowed_accounts: Vec<AccountId>,
+	root_key: AccountId,
+	id: ParaId,
+) -> westmint_runtime::GenesisConfig {
+	westmint_runtime::GenesisConfig {
+		frame_system: westmint_runtime::SystemConfig {
+			code: westmint_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		pallet_balances: westmint_runtime::BalancesConfig {
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, WESTMINT_ED * 4096))
+				.collect(),
+		},
+		pallet_sudo: westmint_runtime::SudoConfig { key: root_key },
+		parachain_info: westmint_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_collator_selection: westmint_runtime::CollatorSelectionConfig {
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: WESTMINT_ED * 16,
+			..Default::default()
+		},
+		pallet_session: westmint_runtime::SessionConfig {
+			keys: invulnerables.iter().cloned().map(|(acc, aura)| (
+				acc.clone(), // account id
+				acc.clone(), // validator id
+				westmint_session_keys(aura), // session keys
+			)).collect()
+		},
+		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
+		// of this.
+		pallet_aura: Default::default(),
+		cumulus_pallet_aura_ext: Default::default(),
 	}
 }
