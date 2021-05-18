@@ -139,9 +139,9 @@ pub fn statemint_local_config(id: ParaId) -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"Local Testnet",
+		"Statemint Local",
 		// ID
-		"local_testnet",
+		"statemint_local",
 		ChainType::Local,
 		move || {
 			statemint_testnet_genesis(
@@ -269,9 +269,9 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 
 	StatemineChainSpec::from_genesis(
 		// Name
-		"Local Testnet",
+		"Statemine Local",
 		// ID
-		"local_testnet",
+		"statemine_local",
 		ChainType::Local,
 		move || {
 			statemine_testnet_genesis(
@@ -398,9 +398,9 @@ pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
 
 	WestmintChainSpec::from_genesis(
 		// Name
-		"Local Testnet",
+		"Westmint Local",
 		// ID
-		"local_testnet",
+		"westmint_local",
 		ChainType::Local,
 		move || {
 			westmint_testnet_genesis(
