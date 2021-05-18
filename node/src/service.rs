@@ -32,6 +32,7 @@ native_executor_instance!(
 	pub StatemintRuntimeExecutor,
 	statemint_runtime::api::dispatch,
 	statemint_runtime::native_version,
+	frame_benchmarking::benchmarking::HostFunctions,
 );
 
 // Native Statemine executor instance.
@@ -39,6 +40,7 @@ native_executor_instance!(
 	pub StatemineRuntimeExecutor,
 	statemine_runtime::api::dispatch,
 	statemine_runtime::native_version,
+	frame_benchmarking::benchmarking::HostFunctions,
 );
 
 // Native Westmint executor instance.
@@ -46,6 +48,7 @@ native_executor_instance!(
 	pub WestmintRuntimeExecutor,
 	westmint_runtime::api::dispatch,
 	westmint_runtime::native_version,
+	frame_benchmarking::benchmarking::HostFunctions,
 );
 
 /// Starts a `ServiceBuilder` for a full service.
