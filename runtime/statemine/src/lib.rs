@@ -52,7 +52,7 @@ use codec::{Decode, Encode};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, parameter_types, match_type,
-	traits::{InstanceFilter, All},
+	traits::{InstanceFilter, All, Filter},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
 		DispatchClass, IdentityFee, Weight,
@@ -144,10 +144,20 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 2;
 }
 
+// Don't allow permission-less asset creation.
+pub struct BaseFilter;
+impl Filter<Call> for BaseFilter {
+	fn filter(c: &Call) -> bool {
+		!matches!(c,
+			Call::Assets(pallet_assets::Call::create(..))
+		)
+	}
+}
+
 // Configure FRAME pallets to include in runtime.
 
 impl frame_system::Config for Runtime {
-	type BaseCallFilter = ();
+	type BaseCallFilter = BaseFilter;
 	/// Block & extrinsics weights: base values and limits.
 	type BlockWeights = RuntimeBlockWeights;
 	/// The maximum length of a block (in bytes).
