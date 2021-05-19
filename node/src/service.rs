@@ -5,7 +5,10 @@ use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
-use cumulus_primitives_core::ParaId;
+use cumulus_primitives_core::{
+	ParaId, relay_chain::v1::{Hash as PHash, PersistedValidationData},
+};
+use cumulus_client_consensus_common::{ParachainConsensus, ParachainCandidate};
 use polkadot_primitives::v0::CollatorPair;
 use runtime_common::Header;
 
@@ -13,10 +16,10 @@ use sc_client_api::ExecutorProvider;
 use sc_executor::native_executor_instance;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
-use sp_api::ConstructRuntimeApi;
+use sp_api::{ConstructRuntimeApi, ApiExt};
 use sp_consensus::SlotData;
-use sp_runtime::traits::BlakeTwo256;
-use sp_runtime::{generic, OpaqueExtrinsic};
+use sp_consensus_aura::AuraApi;
+use sp_runtime::{generic::{self, BlockId}, OpaqueExtrinsic, traits::BlakeTwo256};
 use std::sync::Arc;
 
 pub use sc_executor::NativeExecutor;
@@ -46,6 +49,52 @@ native_executor_instance!(
 	westmint_runtime::native_version,
 	frame_benchmarking::benchmarking::HostFunctions,
 );
+
+/// Special [`ParachainConsensus`] implementation that waits for the upgrade from
+/// shell to a parachain runtime that implements Aura.
+struct WaitForAuraConsensus<Client> {
+	client: Arc<Client>,
+	aura_consensus: Box<dyn ParachainConsensus<Block>>,
+}
+
+impl<Client> Clone for WaitForAuraConsensus<Client> {
+	fn clone(&self) -> Self {
+		Self {
+			client: self.client.clone(),
+			aura_consensus: self.aura_consensus.clone(),
+		}
+	}
+}
+
+#[async_trait::async_trait]
+impl<Client> ParachainConsensus<Block> for WaitForAuraConsensus<Client>
+where
+	Client: sp_api::ProvideRuntimeApi<Block> + Send + Sync,
+	Client::Api: AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId>,
+{
+	async fn produce_candidate(
+		&mut self,
+		parent: &Header,
+		relay_parent: PHash,
+		validation_data: &PersistedValidationData,
+	) -> Option<ParachainCandidate<Block>> {
+		let block_id = BlockId::hash(parent.hash());
+		if self.client
+			.runtime_api()
+			.has_api::<dyn AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId>>(&block_id)
+			.unwrap_or(false)
+		{
+			self.aura_consensus.produce_candidate(
+				parent,
+				relay_parent,
+				validation_data,
+			).await
+		} else {
+			log::debug!("Waiting for runtime with AuRa api");
+			None
+		}
+	}
+}
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -281,7 +330,7 @@ where
 
 		let relay_chain_backend = relay_chain_full_node.backend.clone();
 		let relay_chain_client = relay_chain_full_node.client.clone();
-		let parachain_consensus = build_aura_consensus::<
+		let aura_consensus = build_aura_consensus::<
 			sp_consensus_aura::sr25519::AuthorityPair,
 			_,
 			_,
@@ -335,6 +384,11 @@ where
 		});
 
 		let spawner = task_manager.spawn_handle();
+
+		let parachain_consensus = Box::new(WaitForAuraConsensus {
+			client: client.clone(),
+			aura_consensus,
+		});
 
 		let params = StartCollatorParams {
 			para_id: id,
