@@ -16,7 +16,7 @@
 pub mod currency {
 	use node_primitives::Balance;
 
-	/// The existential deposit. Set to 1/10 of its parent Relay Chain.
+	/// The existential deposit. Set to 1/10 of its parent Relay Chain (v9010).
 	pub const EXISTENTIAL_DEPOSIT: Balance = 10 * CENTS;
 
 	pub const UNITS: Balance = 10_000_000_000;
