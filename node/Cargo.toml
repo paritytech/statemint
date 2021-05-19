@@ -93,11 +93,6 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
 version = '3.0.0'
 
-[dependencies.sc-network]
-git = 'https://github.com/paritytech/substrate.git'
-branch = "statemint"
-version = '0.9.0'
-
 [dependencies.sc-rpc]
 git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
@@ -164,11 +159,6 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
 version = '3.0.0'
 
-[dependencies.sp-keystore]
-git = 'https://github.com/paritytech/substrate.git'
-branch = "statemint"
-version = '0.9.0'
-
 [dependencies.sp-offchain]
 git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
@@ -199,21 +189,12 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = "statemint"
 version = '3.0.0'
 
-[dependencies.substrate-prometheus-endpoint]
-git = 'https://github.com/paritytech/substrate.git'
-branch = "statemint"
-version = '0.9.0'
-
 # Cumulus dependencies
 [dependencies.cumulus-client-cli]
 git = 'https://github.com/paritytech/cumulus.git'
 branch = "statemint"
 
 [dependencies.cumulus-client-consensus-aura]
-git = 'https://github.com/paritytech/cumulus.git'
-branch = "statemint"
-
-[dependencies.cumulus-client-consensus-common]
 git = 'https://github.com/paritytech/cumulus.git'
 branch = "statemint"
 
