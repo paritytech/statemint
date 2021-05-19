@@ -172,27 +172,24 @@ macro_rules! construct_async_run {
 		let runner = $cli.create_runner($cmd)?;
 		if use_statemine_runtime(&*runner.config().chain_spec) {
 			runner.async_run(|$config| {
-				let $components = new_partial::<statemine_runtime::RuntimeApi, StatemineRuntimeExecutor, _>(
+				let $components = new_partial::<statemine_runtime::RuntimeApi, StatemineRuntimeExecutor>(
 					&$config,
-					crate::service::statemine_build_import_queue,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
 			})
 		} else if use_westmint_runtime(&*runner.config().chain_spec) {
 			runner.async_run(|$config| {
-				let $components = new_partial::<westmint_runtime::RuntimeApi, WestmintRuntimeExecutor, _>(
+				let $components = new_partial::<westmint_runtime::RuntimeApi, WestmintRuntimeExecutor>(
 					&$config,
-					crate::service::westmint_build_import_queue,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
 			})
 		} else {
 			runner.async_run(|$config| {
-				let $components = new_partial::<statemint_runtime::RuntimeApi, StatemintRuntimeExecutor, _>(
+				let $components = new_partial::<statemint_runtime::RuntimeApi, StatemintRuntimeExecutor>(
 					&$config,
-					crate::service::statemint_build_import_queue,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -355,17 +352,35 @@ pub fn run() -> Result<()> {
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
 				if use_statemine {
-					crate::service::start_statemine_node(config, key, polkadot_config, id)
+					crate::service::start_node::<statemine_runtime::RuntimeApi, StatemineRuntimeExecutor, _>(
+						config,
+						key,
+						polkadot_config,
+						id,
+						|_| Default::default(),
+					)
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into)
 				} else if use_westmint {
-					crate::service::start_westmint_node(config, key, polkadot_config, id)
+					crate::service::start_node::<westmint_runtime::RuntimeApi, WestmintRuntimeExecutor, _>(
+						config,
+						key,
+						polkadot_config,
+						id,
+						|_| Default::default(),
+					)
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into)
 				} else {
-					crate::service::start_statemint_node(config, key, polkadot_config, id)
+					crate::service::start_node::<statemint_runtime::RuntimeApi, WestmintRuntimeExecutor, _>(
+						config,
+						key,
+						polkadot_config,
+						id,
+						|_| Default::default(),
+					)
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into)
