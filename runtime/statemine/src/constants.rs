@@ -16,17 +16,17 @@
 pub mod currency {
 	use node_primitives::Balance;
 
-	/// The existential deposit. Set to 1/10 of its parent Relay Chain.
-	pub const EXISTENTIAL_DEPOSIT: Balance = 10 * CENTS;
+	/// The existential deposit. Set to 1/10 of its parent Relay Chain (v9020).
+	pub const EXISTENTIAL_DEPOSIT: Balance = CENTS / 10;
 
-	pub const KSM: Balance = 1_000_000_000_000;
-	pub const DOLLARS: Balance = KSM / 300;
-	pub const CENTS: Balance = DOLLARS / 100;
+	pub const UNITS: Balance = 1_000_000_000_000;
+	pub const CENTS: Balance = UNITS / 30_000;
+	pub const GRAND: Balance = CENTS * 100_000;
 	pub const MILLICENTS: Balance = CENTS / 1_000;
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
-		// map to 1/10 of what the kusama relay chain charges (v29)
-		items as Balance * 2 * DOLLARS + (bytes as Balance) * 10 * MILLICENTS
+		// map to 1/10 of what the kusama relay chain charges (v9020)
+		(items as Balance * 2_000 * CENTS + (bytes as Balance) * 100 * MILLICENTS) / 10
 	}
 }
 
