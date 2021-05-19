@@ -1,7 +1,7 @@
 #!/bin/bash
 
-steps=20
-repeat=10
+steps=50
+repeat=20
 statemineOutput=./runtime/statemine/src/weights/
 statemintOutput=./runtime/statemint/src/weights/
 statemineChain=statemine-dev
@@ -19,25 +19,25 @@ pallets=(
 for p in ${pallets[@]}
 do
 	./target/release/statemint benchmark \
-		--chain $statemineChain \
-		--execution wasm \
-		--wasm-execution compiled \
-		--pallet $p  \
-		--extrinsic '*' \
-		--steps $steps  \
-		--repeat $repeat \
+		--chain=$statemineChain \
+		--execution=wasm \
+		--wasm-execution=compiled \
+		--pallet=$p  \
+		--extrinsic='*' \
+		--steps=$steps  \
+		--repeat=$repeat \
 		--raw  \
-		--output $statemineOutput
+		--output=$statemineOutput
 
 	./target/release/statemint benchmark \
-		--chain $statemintChain \
-		--execution wasm \
-		--wasm-execution compiled \
-		--pallet $p  \
-		--extrinsic '*' \
-		--steps $steps  \
-		--repeat $repeat \
+		--chain=$statemintChain \
+		--execution=wasm \
+		--wasm-execution=compiled \
+		--pallet=$p  \
+		--extrinsic='*' \
+		--steps=$steps  \
+		--repeat=$repeat \
 		--raw  \
-		--output $statemintOutput
+		--output=$statemintOutput
 
 done
