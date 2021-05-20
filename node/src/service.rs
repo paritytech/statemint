@@ -50,11 +50,29 @@ native_executor_instance!(
 	frame_benchmarking::benchmarking::HostFunctions,
 );
 
+enum BuildOnAccess<R> {
+	Uninitialized(Box<dyn FnOnce() -> R + Send + Sync>),
+	Initialized(R),
+}
+
+impl<R> BuildOnAccess<R> {
+	fn get_mut(&mut self) -> &mut R {
+		loop {
+			match self {
+				Self::Uninitialized(f) => {
+					*self = Self::Initialized((*f)());
+				},
+				Self::Initialized(r) => return &mut r,
+			}
+		}
+	}
+}
+
 /// Special [`ParachainConsensus`] implementation that waits for the upgrade from
 /// shell to a parachain runtime that implements Aura.
 struct WaitForAuraConsensus<Client> {
 	client: Arc<Client>,
-	aura_consensus: Box<dyn ParachainConsensus<Block>>,
+	aura_consensus: BuildOnAccess<Box<dyn ParachainConsensus<Block>>>,
 }
 
 impl<Client> Clone for WaitForAuraConsensus<Client> {
@@ -84,11 +102,13 @@ where
 			.has_api::<dyn AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId>>(&block_id)
 			.unwrap_or(false)
 		{
-			self.aura_consensus.produce_candidate(
-				parent,
-				relay_parent,
-				validation_data,
-			).await
+			self.aura_consensus
+				.get_mut()
+				.produce_candidate(
+					parent,
+					relay_parent,
+					validation_data,
+				).await
 		} else {
 			log::debug!("Waiting for runtime with AuRa api");
 			None
@@ -318,83 +338,86 @@ where
 	};
 
 	if validator {
-		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+		let client2 = client.clone();
+		let relay_chain_full_node2 = relay_chain_full_node.clone();
 
-		let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-			task_manager.spawn_handle(),
-			client.clone(),
-			transaction_pool,
-			prometheus_registry.as_ref(),
-			telemetry.as_ref().map(|t| t.handle()),
-		);
+		let parachain_consensus = Box::new(WaitForAuraConsensus {
+			client: client.clone(),
+			aura_consensus: BuildOnAccess::Uninitialized(Box::new(move || {
+				let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
-		let relay_chain_backend = relay_chain_full_node.backend.clone();
-		let relay_chain_client = relay_chain_full_node.client.clone();
-		let aura_consensus = build_aura_consensus::<
-			sp_consensus_aura::sr25519::AuthorityPair,
-			_,
-			_,
-			_,
-			_,
-			_,
-			_,
-			_,
-			_,
-			_,
-		>(BuildAuraConsensusParams {
-			proposer_factory,
-			create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
-				let parachain_inherent =
-				cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-					relay_parent,
-					&relay_chain_client,
-					&*relay_chain_backend,
-					&validation_data,
-					id,
+				let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+					task_manager.spawn_handle(),
+					client.clone(),
+					transaction_pool,
+					prometheus_registry.as_ref(),
+					telemetry.as_ref().map(|t| t.handle()),
 				);
-				async move {
-					let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-					let slot =
-					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
-						*time,
-						slot_duration.slot_duration(),
-					);
+				let relay_chain_backend = relay_chain_full_node.backend.clone();
+				let relay_chain_client = relay_chain_full_node.client.clone();
+				let aura_consensus = build_aura_consensus::<
+						sp_consensus_aura::sr25519::AuthorityPair,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+					>(BuildAuraConsensusParams {
+						proposer_factory,
+						create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
+							let parachain_inherent =
+								cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
+									relay_parent,
+									&relay_chain_client,
+									&*relay_chain_backend,
+									&validation_data,
+									id,
+								);
+							async move {
+								let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-					let parachain_inherent = parachain_inherent.ok_or_else(|| {
-						Box::<dyn std::error::Error + Send + Sync>::from(
-							"Failed to create parachain inherent",
-						)
-					})?;
-					Ok((time, slot, parachain_inherent))
-				}
-			},
-			block_import: client.clone(),
-			relay_chain_client: relay_chain_full_node.client.clone(),
-			relay_chain_backend: relay_chain_full_node.backend.clone(),
-			para_client: client.clone(),
-			backoff_authoring_blocks: Option::<()>::None,
-			sync_oracle: network.clone(),
-			keystore: params.keystore_container.sync_keystore(),
-			force_authoring,
-			slot_duration,
-			// We got around 500ms for proposing
-			block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
-			telemetry: telemetry.map(|t| t.handle()),
+								let slot =
+									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+										*time,
+										slot_duration.slot_duration(),
+									);
+
+								let parachain_inherent = parachain_inherent.ok_or_else(|| {
+									Box::<dyn std::error::Error + Send + Sync>::from(
+										"Failed to create parachain inherent",
+									)
+								})?;
+								Ok((time, slot, parachain_inherent))
+							}
+						},
+						block_import: client.clone(),
+						relay_chain_client: relay_chain_full_node2.client.clone(),
+						relay_chain_backend: relay_chain_full_node2.backend.clone(),
+						para_client: client.clone(),
+						backoff_authoring_blocks: Option::<()>::None,
+						sync_oracle: network.clone(),
+						keystore: params.keystore_container.sync_keystore(),
+						force_authoring,
+						slot_duration,
+						// We got around 500ms for proposing
+						block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+						telemetry: telemetry.map(|t| t.handle()),
+					});
+			})),
 		});
 
 		let spawner = task_manager.spawn_handle();
 
-		let parachain_consensus = Box::new(WaitForAuraConsensus {
-			client: client.clone(),
-			aura_consensus,
-		});
-
 		let params = StartCollatorParams {
 			para_id: id,
-			block_status: client.clone(),
+			block_status: client2.clone(),
 			announce_block,
-			client: client.clone(),
+			client: client2.clone(),
 			task_manager: &mut task_manager,
 			collator_key,
 			relay_chain_full_node,
