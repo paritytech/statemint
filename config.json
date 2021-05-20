@@ -29,6 +29,8 @@
 	"simpleParachains": [
 	],
 	"hrmpChannels": [],
-	"types": {},
+	"types": {
+		"BridgedBlockHash": "H256"
+	},
 	"finalization": false
 }
