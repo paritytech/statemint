@@ -9,6 +9,7 @@ use cumulus_primitives_core::{
 	ParaId, relay_chain::v1::{Hash as PHash, PersistedValidationData},
 };
 use cumulus_client_consensus_common::{ParachainConsensus, ParachainCandidate};
+use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use polkadot_primitives::v0::CollatorPair;
 use runtime_common::Header;
 
@@ -16,11 +17,19 @@ use sc_client_api::ExecutorProvider;
 use sc_executor::native_executor_instance;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
+use sp_consensus::{
+	BlockImport, BlockImportParams, BlockOrigin, ForkChoiceStrategy,
+	import_queue::{BasicQueue, CacheKeyId, Verifier as VerifierT},
+};
 use sp_api::{ConstructRuntimeApi, ApiExt};
 use sp_consensus::SlotData;
 use sp_consensus_aura::AuraApi;
-use sp_runtime::{generic::{self, BlockId}, OpaqueExtrinsic, traits::BlakeTwo256};
+use sp_runtime::{
+	generic::{self, BlockId}, OpaqueExtrinsic,
+	traits::{BlakeTwo256, Header as HeaderT},
+};
 use std::sync::Arc;
+use futures::lock::Mutex;
 
 pub use sc_executor::NativeExecutor;
 
@@ -51,7 +60,7 @@ native_executor_instance!(
 );
 
 enum BuildOnAccess<R> {
-	Uninitialized(Box<dyn FnOnce() -> R + Send + Sync>),
+	Uninitialized(Option<Box<dyn FnOnce() -> R + Send + Sync>>),
 	Initialized(R),
 }
 
@@ -60,9 +69,9 @@ impl<R> BuildOnAccess<R> {
 		loop {
 			match self {
 				Self::Uninitialized(f) => {
-					*self = Self::Initialized((*f)());
+					*self = Self::Initialized((f.take().unwrap())());
 				},
-				Self::Initialized(r) => return &mut r,
+				Self::Initialized(ref mut r) => return r,
 			}
 		}
 	}
@@ -72,7 +81,7 @@ impl<R> BuildOnAccess<R> {
 /// shell to a parachain runtime that implements Aura.
 struct WaitForAuraConsensus<Client> {
 	client: Arc<Client>,
-	aura_consensus: BuildOnAccess<Box<dyn ParachainConsensus<Block>>>,
+	aura_consensus: Arc<Mutex<BuildOnAccess<Box<dyn ParachainConsensus<Block>>>>>,
 }
 
 impl<Client> Clone for WaitForAuraConsensus<Client> {
@@ -103,6 +112,8 @@ where
 			.unwrap_or(false)
 		{
 			self.aura_consensus
+				.lock()
+				.await
 				.get_mut()
 				.produce_candidate(
 					parent,
@@ -112,6 +123,45 @@ where
 		} else {
 			log::debug!("Waiting for runtime with AuRa api");
 			None
+		}
+	}
+}
+
+struct Verifier<Client> {
+	client: Arc<Client>,
+	aura_verifier: BuildOnAccess<Box<dyn VerifierT<Block>>>,
+	relay_chain_verifier: Box<dyn VerifierT<Block>>,
+}
+
+#[async_trait::async_trait]
+impl<Client> VerifierT<Block> for Verifier<Client>
+where
+	Client: sp_api::ProvideRuntimeApi<Block> + Send + Sync,
+	Client::Api: AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId>,
+{
+	async fn verify(
+		&mut self,
+		origin: BlockOrigin,
+		header: Header,
+		justifications: Option<sp_runtime::Justifications>,
+		body: Option<Vec<<Block as sp_runtime::traits::Block>::Extrinsic>>,
+	) -> Result<
+		(
+			BlockImportParams<Block, ()>,
+			Option<Vec<(CacheKeyId, Vec<u8>)>>,
+		),
+		String,
+	> {
+		let block_id = BlockId::hash(*header.parent_hash());
+
+		if self.client
+			.runtime_api()
+			.has_api::<dyn AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId>>(&block_id)
+			.unwrap_or(false)
+		{
+			self.aura_verifier.get_mut().verify(origin, header, justifications, body).await
+		} else {
+			self.relay_chain_verifier.verify(origin, header, justifications, body).await
 		}
 	}
 }
@@ -183,42 +233,56 @@ where
 		client.clone(),
 	);
 
-	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+	let client2 = client.clone();
+	let telemetry_handle = telemetry.as_ref().map(|telemetry| telemetry.handle());
 
-	let block_import = cumulus_client_consensus_aura::AuraBlockImport::<
-		_,
-		_,
-		_,
-		sp_consensus_aura::sr25519::AuthorityPair,
-	>::new(client.clone(), client.clone());
+	let aura_verifier = move || {
+		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
 
-	let import_queue = cumulus_client_consensus_aura::import_queue::<
-		sp_consensus_aura::sr25519::AuthorityPair,
-		_,
-		_,
-		_,
-		_,
-		_,
-		_,
-	>(cumulus_client_consensus_aura::ImportQueueParams {
-		block_import,
+		Box::new(cumulus_client_consensus_aura::build_verifier::<
+			sp_consensus_aura::sr25519::AuthorityPair,
+			_,
+			_,
+			_,
+		>(cumulus_client_consensus_aura::BuildVerifierParams {
+			client: client2.clone(),
+			create_inherent_data_providers: move |_, _| async move {
+				let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+				let slot =
+					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+						*time,
+						slot_duration.slot_duration(),
+					);
+
+				Ok((time, slot))
+			},
+			can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client2.executor().clone()),
+			telemetry: telemetry_handle,
+		})) as Box<_>
+	};
+
+	let relay_chain_verifier = Box::new(RelayChainVerifier::new(
+		client.clone(),
+		|_, _| async { Ok(()) },
+	)) as Box<_>;
+
+	let verifier = Verifier {
 		client: client.clone(),
-		create_inherent_data_providers: move |_, _| async move {
-			let time = sp_timestamp::InherentDataProvider::from_system_time();
+		relay_chain_verifier,
+		aura_verifier: BuildOnAccess::Uninitialized(Some(Box::new(aura_verifier))),
+	};
 
-			let slot =
-				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
-					*time,
-					slot_duration.slot_duration(),
-				);
+	let registry = config.prometheus_registry().clone();
+	let spawner = task_manager.spawn_essential_handle();
 
-			Ok((time, slot))
-		},
-		registry: config.prometheus_registry().clone(),
-		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
-		spawner: &task_manager.spawn_essential_handle(),
-		telemetry: telemetry.as_ref().map(|telemetry| telemetry.handle()),
-	})?;
+	let import_queue = BasicQueue::new(
+		verifier,
+		Box::new(client.clone()),
+		None,
+		&spawner,
+		registry,
+	);
 
 	let params = PartialComponents {
 		backend,
@@ -339,25 +403,29 @@ where
 
 	if validator {
 		let client2 = client.clone();
-		let relay_chain_full_node2 = relay_chain_full_node.clone();
+		let relay_chain_backend = relay_chain_full_node.backend.clone();
+		let relay_chain_client = relay_chain_full_node.client.clone();
+		let keystore = params.keystore_container.sync_keystore();
+		let spawn_handle = task_manager.spawn_handle();
 
 		let parachain_consensus = Box::new(WaitForAuraConsensus {
-			client: client.clone(),
-			aura_consensus: BuildOnAccess::Uninitialized(Box::new(move || {
-				let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+			client: client2.clone(),
+			aura_consensus: Arc::new(Mutex::new(BuildOnAccess::Uninitialized(Some(Box::new(move || {
+				let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
 
 				let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-					task_manager.spawn_handle(),
-					client.clone(),
+					spawn_handle,
+					client2.clone(),
 					transaction_pool,
 					prometheus_registry.as_ref(),
 					telemetry.as_ref().map(|t| t.handle()),
 				);
 
-				let relay_chain_backend = relay_chain_full_node.backend.clone();
-				let relay_chain_client = relay_chain_full_node.client.clone();
-				let aura_consensus = build_aura_consensus::<
-						sp_consensus_aura::sr25519::AuthorityPair,
+				let relay_chain_backend2 = relay_chain_backend.clone();
+				let relay_chain_client2 = relay_chain_client.clone();
+
+				build_aura_consensus::<
+					sp_consensus_aura::sr25519::AuthorityPair,
 					_,
 					_,
 					_,
@@ -367,7 +435,7 @@ where
 					_,
 					_,
 					_,
-					>(BuildAuraConsensusParams {
+				>(BuildAuraConsensusParams {
 						proposer_factory,
 						create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
 							let parachain_inherent =
@@ -395,29 +463,29 @@ where
 								Ok((time, slot, parachain_inherent))
 							}
 						},
-						block_import: client.clone(),
-						relay_chain_client: relay_chain_full_node2.client.clone(),
-						relay_chain_backend: relay_chain_full_node2.backend.clone(),
-						para_client: client.clone(),
+						block_import: client2.clone(),
+						relay_chain_client: relay_chain_client2,
+						relay_chain_backend: relay_chain_backend2,
+						para_client: client2.clone(),
 						backoff_authoring_blocks: Option::<()>::None,
 						sync_oracle: network.clone(),
-						keystore: params.keystore_container.sync_keystore(),
+						keystore,
 						force_authoring,
 						slot_duration,
 						// We got around 500ms for proposing
 						block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
 						telemetry: telemetry.map(|t| t.handle()),
-					});
-			})),
+				})
+			}))))),
 		});
 
 		let spawner = task_manager.spawn_handle();
 
 		let params = StartCollatorParams {
 			para_id: id,
-			block_status: client2.clone(),
+			block_status: client.clone(),
 			announce_block,
-			client: client2.clone(),
+			client: client.clone(),
 			task_manager: &mut task_manager,
 			collator_key,
 			relay_chain_full_node,
