@@ -8,7 +8,9 @@ use cumulus_client_service::{
 use cumulus_primitives_core::{
 	ParaId, relay_chain::v1::{Hash as PHash, PersistedValidationData},
 };
-use cumulus_client_consensus_common::{ParachainConsensus, ParachainCandidate};
+use cumulus_client_consensus_common::{
+	ParachainConsensus, ParachainCandidate, ParachainBlockImport,
+};
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use polkadot_primitives::v0::CollatorPair;
 use runtime_common::Header;
@@ -278,7 +280,7 @@ where
 
 	let import_queue = BasicQueue::new(
 		verifier,
-		Box::new(client.clone()),
+		Box::new(ParachainBlockImport::new(client.clone())),
 		None,
 		&spawner,
 		registry,
