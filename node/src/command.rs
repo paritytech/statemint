@@ -377,7 +377,7 @@ pub fn run() -> Result<()> {
 						.map(|r| r.0)
 						.map_err(Into::into)
 				} else {
-					crate::service::start_node::<statemint_runtime::RuntimeApi, WestmintRuntimeExecutor, _>(
+					crate::service::start_node::<statemint_runtime::RuntimeApi, StatemintRuntimeExecutor, _>(
 						config,
 						key,
 						polkadot_config,
