@@ -20,7 +20,7 @@ use sc_executor::native_executor_instance;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
 use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, ForkChoiceStrategy,
+	BlockImportParams, BlockOrigin,
 	import_queue::{BasicQueue, CacheKeyId, Verifier as VerifierT},
 };
 use sp_api::{ConstructRuntimeApi, ApiExt};
