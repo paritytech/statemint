@@ -104,7 +104,7 @@ pub fn statemint_development_config(id: ParaId) -> ChainSpec {
 		"statemint_dev",
 		ChainType::Local,
 		move || {
-			statemint_testnet_genesis(
+			statemint_genesis(
 				// initial collators.
 				vec![
 					(
@@ -144,7 +144,7 @@ pub fn statemint_local_config(id: ParaId) -> ChainSpec {
 		"statemint_local",
 		ChainType::Local,
 		move || {
-			statemint_testnet_genesis(
+			statemint_genesis(
 				// initial collators.
 				vec![(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -183,7 +183,7 @@ pub fn statemint_local_config(id: ParaId) -> ChainSpec {
 	)
 }
 
-fn statemint_testnet_genesis(
+fn statemint_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
@@ -234,7 +234,7 @@ pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 		"statemine_dev",
 		ChainType::Local,
 		move || {
-			statemine_testnet_genesis(
+			statemine_genesis(
 				// initial collators.
 				vec![
 					(
@@ -274,7 +274,7 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 		"statemine_local",
 		ChainType::Local,
 		move || {
-			statemine_testnet_genesis(
+			statemine_genesis(
 				// initial collators.
 				vec![(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -313,7 +313,53 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 	)
 }
 
-fn statemine_testnet_genesis(
+pub fn statemine_config(id: ParaId) -> StatemineChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "KSM".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	StatemineChainSpec::from_genesis(
+		// Name
+		"Statemine",
+		// ID
+		"statemine",
+		ChainType::Live,
+		move || {
+			statemine_genesis(
+				// initial collators.
+				vec![(
+						hex!("50673d59020488a4ffc9d8c6de3062a65977046e6990915617f85fef6d349730").into(),
+						hex!("50673d59020488a4ffc9d8c6de3062a65977046e6990915617f85fef6d349730").unchecked_into()
+					),
+					(
+						hex!("fe8102dbc244e7ea2babd9f53236d67403b046154370da5c3ea99def0bd0747a").into(),
+						hex!("fe8102dbc244e7ea2babd9f53236d67403b046154370da5c3ea99def0bd0747a").unchecked_into()
+					),
+					(
+						hex!("38144b5398e5d0da5ec936a3af23f5a96e782f676ab19d45f29075ee92eca76a").into(),
+						hex!("38144b5398e5d0da5ec936a3af23f5a96e782f676ab19d45f29075ee92eca76a").unchecked_into()
+					),
+					(
+						hex!("3253947640e309120ae70fa458dcacb915e2ddd78f930f52bd3679ec63fc4415").into(),
+						hex!("3253947640e309120ae70fa458dcacb915e2ddd78f930f52bd3679ec63fc4415").unchecked_into()
+					),
+				],
+				vec![],
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions {
+			relay_chain: "kusama".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
+fn statemine_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
@@ -362,7 +408,7 @@ pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
 		"westmint_dev",
 		ChainType::Local,
 		move || {
-			westmint_testnet_genesis(
+			westmint_genesis(
 				// initial collators.
 				vec![
 					(
@@ -403,7 +449,7 @@ pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
 		"westmint_local",
 		ChainType::Local,
 		move || {
-			westmint_testnet_genesis(
+			westmint_genesis(
 				// initial collators.
 				vec![(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -443,7 +489,7 @@ pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
 	)
 }
 
-fn westmint_testnet_genesis(
+fn westmint_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	root_key: AccountId,
