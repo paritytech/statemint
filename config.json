@@ -13,17 +13,30 @@
 				"wsPort": 9955,
 				"port": 30555
 			}
-		]
+		],
+		"runtime_genesis_config": {
+			"parachainsConfiguration": {
+				"config": {
+					"validation_upgrade_frequency": 1,
+					"validation_upgrade_delay": 1
+				}
+			}
+		}
 	},
 	"parachains": [
 		{
 			"bin": "./target/release/statemint",
 			"chain": "statemint-dev",
 			"id": "1000",
-			"wsPort": 9988,
-			"port": 31200,
 			"balance": "1000000000000000000000",
-			"flags": ["--alice", "-laura=debug", "--force-authoring", "--", "--execution=wasm"]
+			"nodes": [
+				{
+					"name": "alice",
+					"wsPort": 9988,
+					"port": 31200,
+					"flags": ["--", "--execution=wasm"]
+				}
+			]
 		}
 	],
 	"simpleParachains": [

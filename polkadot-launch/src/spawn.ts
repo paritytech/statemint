@@ -38,6 +38,7 @@ export async function generateChainSpec(bin: string, chain: string) {
 
 // Output the chainspec of a node using `--raw` from a JSON file.
 export async function generateChainSpecRaw(bin: string, chain: string) {
+	console.log(); // Add a newline in output
 	return new Promise<void>(function (resolve, reject) {
 		let args = ["build-spec", "--chain=" + chain + ".json", "--raw"];
 
@@ -155,6 +156,8 @@ export function startCollator(
 			"--port=" + port,
 			"--parachain-id=" + id,
 			"--collator",
+			"--alice",
+			"--force-authoring"
 		];
 
 		if (chain) {

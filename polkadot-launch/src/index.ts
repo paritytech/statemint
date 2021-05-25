@@ -14,16 +14,21 @@ import {
 	connect,
 	registerParachain,
 	setBalance,
-	establishHrmpChannel,
 } from "./rpc";
 import { checkConfig } from "./check";
-import { clearAuthorities, addAuthority, addBootNodes, listenAddresses } from "./spec";
+import {
+	clearAuthorities,
+	addAuthority,
+	changeGenesisConfig,
+	addGenesisParachain,
+	addGenesisHrmpChannel,
+} from "./spec";
 import { parachainAccount } from "./parachain";
 import { ApiPromise } from "@polkadot/api";
 
 import { resolve, dirname } from "path";
 import fs from "fs";
-import { LaunchConfig } from "./types";
+import { LaunchConfig, ParachainConfig, HrmpChannelsConfig } from "./types";
 
 // Special care is needed to handle paths to various files (binaries, spec, config, etc...)
 // The user passes the path to `config.json`, and we use that as the starting point for any other
@@ -58,10 +63,10 @@ function loadTypeDef(types: string | object): object {
 	}
 }
 
-async function main() {
-	// keep track of registered parachains
-	let registeredParachains: { [key: string]: boolean } = {};
+// keep track of registered parachains
+let registeredParachains: { [key: string]: boolean } = {};
 
+async function main() {
 	// Verify that the `config.json` has all the expected properties.
 	if (!checkConfig(config)) {
 		return;
@@ -74,73 +79,60 @@ async function main() {
 	}
 	const chain = config.relaychain.chain;
 	await generateChainSpec(relay_chain_bin, chain);
+	// -- Start Chain Spec Modify --
 	clearAuthorities(`${chain}.json`);
 	for (const node of config.relaychain.nodes) {
 		await addAuthority(`${chain}.json`, node.name);
 	}
+	if (config.relaychain.runtime_genesis_config) {
+		await changeGenesisConfig(
+			`${chain}.json`,
+			config.relaychain.runtime_genesis_config
+		);
+	}
+	await addParachainsToGenesis(`${chain}.json`, config.parachains);
+	await addHrmpChannelsToGenesis(`${chain}.json`, config.hrmpChannels);
+	// -- End Chain Spec Modify --
 	await generateChainSpecRaw(relay_chain_bin, chain);
 	const spec = resolve(`${chain}-raw.json`);
-	const { name, wsPort, port, flags } = config.relaychain.nodes[0];
-	startNode(relay_chain_bin, name, wsPort, port, spec, flags);
+
+	// First we launch each of the validators for the relay chain.
+	for (const node of config.relaychain.nodes) {
+		const { name, wsPort, port, flags } = node;
+		console.log(`Starting ${name}...`);
+		// We spawn a `child_process` starting a node, and then wait until we
+		// able to connect to it using PolkadotJS in order to know its running.
+		startNode(relay_chain_bin, name, wsPort, port, spec, flags);
+	}
+
 	// Connect to the first relay chain node to submit the extrinsic.
 	let relayChainApi: ApiPromise = await connect(
 		config.relaychain.nodes[0].wsPort,
 		loadTypeDef(config.types)
 	);
-	// First we launch each of the validators for the relay chain.
-	for (const node of config.relaychain.nodes) {
-		if (node.name !== config.relaychain.nodes[0].name) {
-			const { name, wsPort, port, flags } = node;
-			console.log(`Starting ${name}...`);
-			let addresses = await listenAddresses(relayChainApi)
-			// await addBootNodes(`${chain}-raw.json`, addresses);
-
-			// We spawn a `child_process` starting a node, and then wait until we
-			// able to connect to it using PolkadotJS in order to know its running.
-			startNode(relay_chain_bin, name, wsPort, port, spec, flags);
-		}
-	}
-
-
 
 	// Then launch each parachain
 	for (const parachain of config.parachains) {
-		const { id, wsPort, balance, port, flags, chain } = parachain;
+		const { id, balance, chain } = parachain;
 		const bin = resolve(config_dir, parachain.bin);
 		if (!fs.existsSync(bin)) {
 			console.error("Parachain binary does not exist: ", bin);
 			process.exit();
 		}
 		let account = parachainAccount(id);
-		console.log(
-			`Starting a Collator for parachain ${id}: ${account}, Collator port : ${port} wsPort : ${wsPort}`
-		);
-		await startCollator(bin, id, wsPort, port, chain, spec, flags);
 
-		// If it isn't registered yet, register the parachain on the relaychain
-		if (!registeredParachains[id]) {
-			console.log(`Registering Parachain ${id}`);
+		for (const node of parachain.nodes) {
+			const { wsPort, port, flags } = node;
+			console.log(
+				`Starting a Collator for parachain ${id}: ${account}, Collator port : ${port} wsPort : ${wsPort}`
+			);
+			await startCollator(bin, id, wsPort, port, chain, spec, flags);
+		}
 
-			// Get the information required to register the parachain on the relay chain.
-			let genesisState;
-			let genesisWasm;
-			try {
-				genesisState = await exportGenesisState(bin, id, chain);
-				genesisWasm = await exportGenesisWasm(bin, chain);
-			} catch (err) {
-				console.error(err);
-				process.exit(1);
-			}
-
-			await registerParachain(relayChainApi, id, genesisWasm, genesisState, config.finalization);
-
-			registeredParachains[id] = true;
-
-			// Allow time for the TX to complete, avoiding nonce issues.
-			// TODO: Handle nonce directly instead of this.
-			if (balance) {
-				await setBalance(relayChainApi, account, balance, config.finalization);
-			}
+		// Allow time for the TX to complete, avoiding nonce issues.
+		// TODO: Handle nonce directly instead of this.
+		if (balance) {
+			await setBalance(relayChainApi, account, balance, config.finalization);
 		}
 	}
 
@@ -172,7 +164,13 @@ async function main() {
 			}
 
 			console.log(`Registering Parachain ${id}`);
-			await registerParachain(relayChainApi, id, genesisWasm, genesisState, config.finalization);
+			await registerParachain(
+				relayChainApi,
+				id,
+				genesisWasm,
+				genesisState,
+				config.finalization
+			);
 
 			// Allow time for the TX to complete, avoiding nonce issues.
 			// TODO: Handle nonce directly instead of this.
@@ -181,40 +179,49 @@ async function main() {
 			}
 		}
 	}
-	if (config.hrmpChannels) {
-		for (const hrmpChannel of config.hrmpChannels) {
-			console.log(`Setting Up HRMP Channel ${hrmpChannel.sender} -> ${hrmpChannel.recipient}`);
-			await ensureOnboarded(relayChainApi, hrmpChannel.sender);
-			await ensureOnboarded(relayChainApi, hrmpChannel.recipient);
 
-			const { sender, recipient, maxCapacity, maxMessageSize } = hrmpChannel;
-			await establishHrmpChannel(
-				relayChainApi,
-				sender,
-				recipient,
-				maxCapacity,
-				maxMessageSize,
-				config.finalization,
-			);
-		}
-	}
 	console.log("🚀 POLKADOT LAUNCH COMPLETE 🚀");
 }
 
-async function ensureOnboarded(relayChainApi: ApiPromise, paraId: number) {
-	return new Promise<void>(async function (resolve) {
-		// We subscribe to the heads as a simple way to tell that the chain onboarded.
-		let unsub = await relayChainApi.query.paras.heads(
-			paraId,
-			(response: any) => {
-				if (response.isSome) {
-					// Surprisingly, this ouroboros like subscription pattern seem to work.
-					unsub();
-					resolve();
-				}
+async function addParachainsToGenesis(
+	spec: string,
+	parachains: ParachainConfig[]
+) {
+	console.log("\n⛓ Adding Genesis Parachains");
+	for (const parachain of parachains) {
+		const { id, chain } = parachain;
+		const bin = resolve(config_dir, parachain.bin);
+		if (!fs.existsSync(bin)) {
+			console.error("Parachain binary does not exist: ", bin);
+			process.exit();
+		}
+		// If it isn't registered yet, register the parachain in genesis
+		if (!registeredParachains[id]) {
+			// Get the information required to register the parachain in genesis.
+			let genesisState;
+			let genesisWasm;
+			try {
+				genesisState = await exportGenesisState(bin, id, chain);
+				genesisWasm = await exportGenesisWasm(bin, chain);
+			} catch (err) {
+				console.error(err);
+				process.exit(1);
 			}
-		);
-	});
+
+			await addGenesisParachain(spec, id, genesisState, genesisWasm, true);
+			registeredParachains[id] = true;
+		}
+	}
+}
+
+async function addHrmpChannelsToGenesis(
+	spec: string,
+	hrmpChannels: HrmpChannelsConfig[]
+) {
+	console.log("⛓ Adding Genesis HRMP Channels");
+	for (const hrmpChannel of hrmpChannels) {
+		await addGenesisHrmpChannel(spec, hrmpChannel);
+	}
 }
 
 // Kill all processes when exiting.
@@ -227,4 +234,4 @@ process.on("SIGINT", function () {
 	process.exit(2);
 });
 
-main().catch(console.error).finally(console.log);
+main();
