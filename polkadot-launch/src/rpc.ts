@@ -19,26 +19,8 @@ filterConsole([
 // TODO: Add a timeout where we know something went wrong so we don't wait forever.
 export async function connect(port: number, types: any) {
 	const provider = new WsProvider("ws://127.0.0.1:" + port);
-	const api = new ApiPromise({ provider, types });
-	await api.isReady;
+	const api = await ApiPromise.create({ provider, types, throwOnConnect: false });
 	return api;
-}
-
-// Get the PeerId for a running node. Can be used when defining bootnodes for future nodes.
-export async function peerId(api: ApiPromise) {
-	let peerId = await api.rpc.system.localPeerId();
-	return peerId.toString();
-}
-
-// Track and display basic information about a chain each block it produces.
-export async function follow(name: string, api: ApiPromise) {
-	console.log(`Following ${name}`);
-	await api.rpc.chain.subscribeNewHeads(async (header) => {
-		let peers = await api.rpc.system.peers();
-		console.log(
-			`${name} is at block: #${header.number} (${peers.length} Peers)`
-		);
-	});
 }
 
 // Get the genesis header of a node. Used for registering a parachain on the relay chain.
@@ -55,7 +37,7 @@ export async function registerParachain(
 	id: string,
 	wasm: string,
 	header: string,
-	finalization: boolean = false,
+	finalization: boolean = false
 ) {
 	return new Promise<void>(async (resolvePromise, reject) => {
 		await cryptoWaitReady();
@@ -107,7 +89,7 @@ export async function setBalance(
 	api: ApiPromise,
 	who: string,
 	value: string,
-	finalization: boolean = false,
+	finalization: boolean = false
 ) {
 	return new Promise<void>(async (resolvePromise, reject) => {
 		await cryptoWaitReady();
@@ -151,68 +133,11 @@ export async function setBalance(
 	});
 }
 
-export async function establishHrmpChannel(
-	api: ApiPromise,
-	sender: number,
-	receiver: number,
-	maxCapacity: number,
-	maxMessageSize: number,
-	finalization: boolean = false,
-) {
-	return new Promise<void>(async (resolvePromise, reject) => {
-		await cryptoWaitReady();
-
-		const keyring = new Keyring({ type: "sr25519" });
-		const alice = keyring.addFromUri("//Alice");
-
-		if (!nonce) {
-			nonce = Number((await api.query.system.account(alice.address)).nonce);
-		}
-
-		console.log(
-			`--- Submitting extrinsic to establish an HRMP channel ${sender} -> ${receiver}. (nonce: ${nonce}) ---`
-		);
-		const unsub = await api.tx.sudo
-			.sudo(
-				api.tx.parasSudoWrapper.sudoEstablishHrmpChannel(
-					sender,
-					receiver,
-					maxCapacity,
-					maxMessageSize,
-				)
-			)
-			.signAndSend(alice, { nonce: nonce, era: 0 }, (result) => {
-				console.log(`Current status is ${result.status}`);
-				if (result.status.isInBlock) {
-					console.log(
-						`Transaction included at blockHash ${result.status.asInBlock}`
-					);
-					if (finalization) {
-						console.log("Waiting for finalization...");
-					} else {
-						unsub();
-						resolvePromise();
-					}
-				} else if (result.status.isFinalized) {
-					console.log(
-						`Transaction finalized at blockHash ${result.status.asFinalized}`
-					);
-					unsub();
-					resolvePromise();
-				} else if (result.isError) {
-					console.log(`Transaction Error`);
-					reject(`Transaction Error`);
-				}
-			});
-		nonce += 1;
-	});
-}
-
 export async function sendHrmpMessage(
 	api: ApiPromise,
 	recipient: string,
 	data: string,
-	finalization: boolean = false,
+	finalization: boolean = false
 ) {
 	return new Promise<void>(async (resolvePromise, reject) => {
 		await cryptoWaitReady();
