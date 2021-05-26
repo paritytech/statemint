@@ -34,7 +34,7 @@
 					"name": "alice",
 					"wsPort": 9988,
 					"port": 31200,
-					"flags": ["--", "--execution=wasm"]
+					"flags": ["-laura=debug", "--", "--execution=wasm"]
 				}
 			]
 		}
