@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "./bin/polkadot",
+		"bin": "../bin/polkadot",
 		"chain": "rococo-local",
 		"nodes": [
 			{
@@ -25,7 +25,7 @@
 	},
 	"parachains": [
 		{
-			"bin": "./target/release/statemint",
+			"bin": "../target/release/statemint",
 			"chain": "statemint-dev",
 			"id": "1000",
 			"balance": "1000000000000000000000",
