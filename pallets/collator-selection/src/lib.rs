@@ -298,7 +298,8 @@ pub mod pallet {
 			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
 
 			let deposit = Self::candidacy_bond();
-			let incoming = CandidateInfo { who: who.clone(), deposit, last_block: frame_system::Pallet::<T>::block_number() };
+			// First authored block is current block plus kick threshold to handle session delay
+			let incoming = CandidateInfo { who: who.clone(), deposit, last_block: frame_system::Pallet::<T>::block_number() + T::KickThreshold::get() };
 
 			let current_count =
 				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
@@ -357,7 +358,7 @@ pub mod pallet {
 			let now = frame_system::Pallet::<T>::block_number();
 			let kick_threshold = T::KickThreshold::get();
 			let new_candidates = candidates.into_iter().filter_map(|c| {
-				let since_last = now - c.last_block;
+				let since_last = if now > c.last_block { now - c.last_block } else { 0u32.into() };
 				if since_last < kick_threshold {
 					Some(c.who)
 				} else {
