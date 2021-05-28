@@ -28,7 +28,7 @@ pub trait WeightInfo {
 	fn set_candidacy_bond() -> Weight;
 	fn register_as_candidate(_c: u32) -> Weight;
 	fn leave_intent(_c: u32) -> Weight;
-	fn note_author(_c: u32) -> Weight;
+	fn note_author() -> Weight;
 	fn new_session(_c: u32, _r: u32) -> Weight;
 }
 
@@ -63,11 +63,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
-	fn note_author(c: u32, ) -> Weight {
-		(108_730_000 as Weight)
-			// Standard Error: 3_000
-			.saturating_add((286_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
+	fn note_author() -> Weight {
+		(106_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
 	fn new_session(r: u32, c: u32, ) -> Weight {
@@ -112,11 +110,9 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
-	fn note_author(c: u32, ) -> Weight {
-		(108_730_000 as Weight)
-			// Standard Error: 3_000
-			.saturating_add((286_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
+	fn note_author() -> Weight {
+		(106_000_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
 	fn new_session(r: u32, c: u32, ) -> Weight {
