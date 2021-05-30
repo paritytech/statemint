@@ -341,6 +341,7 @@ pub mod pallet {
 				let index = candidates.iter().position(|candidate| candidate.who == *who).ok_or(Error::<T>::NotCandidate)?;
 				T::Currency::unreserve(&who, candidates[index].deposit);
 				candidates.remove(index);
+				<LastAuthoredBlock<T>>::remove(who.clone());
 				Ok(candidates.len())
 			});
 			Self::deposit_event(Event::CandidateRemoved(who.clone()));

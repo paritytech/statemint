@@ -193,6 +193,7 @@ fn leave_intent() {
 		// bond is returned
 		assert_ok!(CollatorSelection::leave_intent(Origin::signed(3)));
 		assert_eq!(Balances::free_balance(3), 100);
+		assert_eq!(CollatorSelection::last_authored_block(3), 0);
 	});
 }
 
