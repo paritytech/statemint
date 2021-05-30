@@ -173,7 +173,7 @@ benchmarks! {
 		<Candidates<T>>::put(candidates.clone());
 
 		let pre_length = <Candidates<T>>::get().len();
-		frame_system::Pallet::<T>::set_block_number(new_block.clone());
+		frame_system::Pallet::<T>::set_block_number(new_block);
 
 		assert!(<Candidates<T>>::get().len() == c as usize);
 

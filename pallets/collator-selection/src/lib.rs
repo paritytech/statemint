@@ -85,7 +85,7 @@ pub mod pallet {
 	use frame_support::{
 		sp_runtime::{
 			RuntimeDebug,
-			traits::{AccountIdConversion, CheckedSub, Zero},
+			traits::{AccountIdConversion, CheckedSub, Zero, Saturating},
 		},
 		weights::DispatchClass,
 	};
