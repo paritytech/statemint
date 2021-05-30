@@ -364,7 +364,7 @@ pub mod pallet {
 			let kick_threshold = T::KickThreshold::get();
 			let new_candidates = candidates.into_iter().filter_map(|c| {
 				let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
-				let since_last = if now > last_block { now - last_block } else { 0u32.into() };
+				let since_last = now.saturating_sub(last_block);
 				if since_last < kick_threshold {
 					Some(c.who)
 				} else {

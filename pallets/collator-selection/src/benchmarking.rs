@@ -142,7 +142,7 @@ benchmarks! {
 		let author = account("author", 0, SEED);
 		let new_block: T::BlockNumber = 10u32.into();
 
-		frame_system::Pallet::<T>::set_block_number(new_block.clone());
+		frame_system::Pallet::<T>::set_block_number(new_block);
 		assert!(T::Currency::free_balance(&author) == 0u32.into());
 	}: {
 		<CollatorSelection<T> as EventHandler<_, _>>::note_author(author.clone())
