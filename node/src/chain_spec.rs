@@ -489,6 +489,52 @@ pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
 	)
 }
 
+pub fn westmint_config(id: ParaId) -> WestmintChainSpec {
+	let mut properties = Properties::new();
+	properties.insert("tokenSymbol".into(), "WND".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	WestmintChainSpec::from_genesis(
+		// Name
+		"Westmint",
+		// ID
+		"westmint",
+		ChainType::Live,
+		move || {
+			statemine_genesis(
+				// initial collators.
+				vec![(
+						hex!("todo").into(),
+						hex!("todo").unchecked_into()
+					),
+					(
+						hex!("todo").into(),
+						hex!("todo").unchecked_into()
+					),
+					(
+						hex!("todo").into(),
+						hex!("todo").unchecked_into()
+					),
+					(
+						hex!("todo").into(),
+						hex!("todo").unchecked_into()
+					),
+				],
+				vec![],
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions {
+			relay_chain: "westend".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
 fn westmint_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
