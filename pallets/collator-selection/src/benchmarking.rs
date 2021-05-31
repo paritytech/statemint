@@ -162,15 +162,18 @@ benchmarks! {
 		frame_system::Pallet::<T>::set_block_number(0u32.into());
 		register_candidates::<T>(c);
 
-		let new_block: T::BlockNumber = 20u32.into();
-
+		let new_block: T::BlockNumber = 1800u32.into();
+		let zero_block: T::BlockNumber = 0u32.into();
 		let candidates = <Candidates<T>>::get();
-		let non_removals = if c > r { c - r } else { 0 };
 
+		let non_removals = c.saturating_sub(r);
+
+		for i in 0..c {
+			<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), zero_block);
+		}
 		for i in 0..non_removals {
 			<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
 		}
-		<Candidates<T>>::put(candidates.clone());
 
 		let pre_length = <Candidates<T>>::get().len();
 		frame_system::Pallet::<T>::set_block_number(new_block);
@@ -180,7 +183,7 @@ benchmarks! {
 	}: {
 		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
 	} verify {
-		assert!(<Candidates<T>>::get().len() <= pre_length);
+		assert!(<Candidates<T>>::get().len() < pre_length);
 	}
 }
 
