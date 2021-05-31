@@ -52,7 +52,7 @@ use codec::{Decode, Encode};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, parameter_types, match_type,
-	traits::{InstanceFilter, All},
+	traits::{InstanceFilter, All, MaxEncodedLen},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
 		DispatchClass, IdentityFee, Weight,
@@ -294,7 +294,7 @@ parameter_types! {
 }
 
 /// The type used to represent the kinds of proxying allowed.
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, MaxEncodedLen)]
 pub enum ProxyType {
 	/// Fully permissioned proxy. Can execute any call on behalf of _proxied_.
 	Any,
