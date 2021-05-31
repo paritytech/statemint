@@ -501,7 +501,7 @@ pub fn westmint_config(id: ParaId) -> WestmintChainSpec {
 		"westmint",
 		ChainType::Live,
 		move || {
-			statemine_genesis(
+			westmint_genesis(
 				// initial collators.
 				vec![(
 						hex!("9cfd429fa002114f33c1d3e211501d62830c9868228eb3b4b8ae15a83de04325").into(),
@@ -521,6 +521,7 @@ pub fn westmint_config(id: ParaId) -> WestmintChainSpec {
 					),
 				],
 				vec![],
+				hex!("6648d7f3382690650c681aba1b993cd11e54deb4df21a3a18c3e2177de9f7342").into(),
 				id,
 			)
 		},
