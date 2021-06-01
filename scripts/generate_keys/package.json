@@ -1,0 +1,14 @@
+{
+  "name": "keys",
+  "version": "1.0.0",
+  "description": "generate and filter storage keys",
+  "main": "keys.js",
+  "scripts": {
+    "keys": "node keys.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@polkadot/util-crypto": "^6.5.1"
+  }
+}
