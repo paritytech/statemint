@@ -6,7 +6,7 @@ homepage = 'https://substrate.dev'
 license = 'Apache-2.0'
 name = 'pallet-collator-selection'
 readme = 'README.md'
-repository = 'https://github.com/paritytech/substrate/'
+repository = 'https://github.com/paritytech/statemint'
 version = '3.0.0'
 
 [package.metadata.docs.rs]

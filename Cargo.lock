@@ -9773,7 +9773,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "statemine-runtime"
-version = "2.0.0"
+version = "1.0.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -9833,7 +9833,7 @@ dependencies = [
 
 [[package]]
 name = "statemint"
-version = "2.0.0"
+version = "1.0.0"
 dependencies = [
  "async-trait",
  "cumulus-client-cli",
@@ -9895,7 +9895,7 @@ dependencies = [
 
 [[package]]
 name = "statemint-runtime"
-version = "2.0.0"
+version = "1.0.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -11540,7 +11540,7 @@ dependencies = [
 
 [[package]]
 name = "westmint-runtime"
-version = "2.0.0"
+version = "1.0.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
