@@ -4,13 +4,13 @@ name = 'statemint'
 [package]
 authors = ['Anonymous']
 build = 'build.rs'
-description = 'A new FRAME-based Substrate node, ready for hacking.'
+description = 'Statemint collator node.'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Apache-2.0'
 name = 'statemint'
-repository = 'https://github.com/paritytech/substrate/'
-version = '2.0.0'
+repository = 'https://github.com/paritytech/statemint'
+version = '1.0.0'
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
@@ -39,15 +39,15 @@ version = '3.0.0'
 
 [dependencies.statemint-runtime]
 path = '../runtime/statemint'
-version = '2.0.0'
+version = '1.0.0'
 
 [dependencies.statemine-runtime]
 path = '../runtime/statemine'
-version = '2.0.0'
+version = '1.0.0'
 
 [dependencies.westmint-runtime]
 path = '../runtime/westmint'
-version = '2.0.0'
+version = '1.0.0'
 
 [dependencies.runtime-common]
 path = '../runtime/common'
