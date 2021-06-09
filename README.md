@@ -1,5 +1,8 @@
 # Statemint
 
+> **Note: Statemint was moved into the [Cumulus repo](https://github.com/paritytech/cumulus).
+> Please check there for the current version**
+
 Implementation of _Statemint,_ a blockchain to support generic assets in the Polkadot and Kusama
 networks.
 
